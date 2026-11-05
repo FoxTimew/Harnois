@@ -1,0 +1,50 @@
+# Workflow volontairement minimal : il récupère le code et appelle des scripts
+# stockés sur le serveur du runner (/opt/harnois-ci), hors de Git.
+# Toute la logique (tests, build, déploiement, secrets) vit là-bas.
+#
+# Deux runners sur le même serveur, sous deux utilisateurs Linux distincts :
+#   - harnois-ci     : exécute le code des PR, n'a accès à AUCUN secret réel ;
+#   - harnois-deploy : ne tourne que sur main et les tags, a accès aux secrets.
+#
+# Ce fichier est ajouté par le propriétaire du dépôt, pas par l'agent IA
+# (son jeton n'a pas la permission « Workflows »).
+
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: [self-hosted, linux, harnois-ci]
+    timeout-minutes: 30
+    steps:
+      # Version épinglée par empreinte (v7.0.1) : un tag peut être déplacé, pas un SHA
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Vérifications (script local du serveur)
+        run: /opt/harnois-ci/ci.sh
+
+  deploy:
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, linux, harnois-deploy]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Déploiement (script local du serveur)
+        run: /opt/harnois-ci/deploy.sh ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
