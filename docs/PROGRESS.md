@@ -19,6 +19,10 @@
 - 30 tests Vitest réussis, dont 7 tests PostgreSQL : écriture/relecture, nettoyage
   transactionnel, seed relançable, présence et comportement des quatre index partiels.
 - Contrôles locaux avant publication : lint, typecheck, test et build réussis.
+- Séquence du runner également reproduite avec succès dans un conteneur Linux
+  Node 24, sans fichier .env, avec CI=true et les seules quatre variables applicatives :
+  npm ci, prisma generate, migrate deploy, lint, typecheck, test, build.
+  Cette reproduction locale utilise harnois_test ; elle ne remplace pas la CI GitHub.
 - 2 tests Playwright réussis ; captures relues à 375 px et 1280 px dans
   `docs/screenshots/`, sans débordement horizontal ni erreur JavaScript.
 - Services locaux opérationnels : PostgreSQL 17, SeaweedFS 4.48, Mailpit.
@@ -55,7 +59,13 @@
 
 ## Points ouverts
 
-- PR et résultat du runner auto-hébergé à renseigner après publication.
+- [PR #1](https://github.com/FoxTimew/Harnois/pull/1) ouverte, non mergée.
+  CI GitHub en attente de runner : verify exige self-hosted/linux/harnois-ci,
+  mais GitHub ne liste que MATTHIEU-IT, en ligne, avec les labels self-hosted/Windows/X64.
+  Aucune étape du job n'a pu s'exécuter ; aucun log d'échec applicatif n'est disponible.
+  Le propriétaire doit mettre à disposition le runner Linux prévu et son script
+  /opt/harnois-ci/ci.sh. Aucun workflow ni paramètre de dépôt n'a été modifié.
+  La phase ne peut pas être déclarée terminée tant que cette CI n'est pas verte.
 - `npm audit` : aucune vulnérabilité de production ; 10 alertes modérées
   d'outillage, issues de minimatch ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
   Le correctif minimatch 11.0.1 est publié le 27 octobre 2026 à 22:26 UTC et ne
