@@ -7,11 +7,14 @@
 //   - Montants en Decimal (jamais en Float) pour éviter les erreurs d'arrondi.
 //   - On archive plutôt que de supprimer : les historiques (assignations,
 //     licences, accès) sont conservés grâce aux champs returnedAt / revokedAt.
+//     Les parents d\'un historique sont en onDelete: Restrict.
+//   - Les emails sont toujours stockés en minuscules (normalisés par les services).
 // =====================================================================
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"] // index partiels déclarés dans le schéma (Prisma >= 7.4)
 }
 
 datasource db {
@@ -244,6 +247,7 @@ model Invitation {
   email       String
   role        UserRole  @default(EMPLOYEE)
   employeeId  String? // employé à lier automatiquement au compte créé
+  employee    Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   tokenHash   String    @unique
   expiresAt   DateTime
   acceptedAt  DateTime?
@@ -253,6 +257,9 @@ model Invitation {
 
   createdAt DateTime @default(now())
 
+  // Une seule invitation en attente par adresse. Une invitation expirée doit être
+  // révoquée (revokedAt) par le service avant d\'en créer une nouvelle.
+  @@unique([email], where: { acceptedAt: null, revokedAt: null }, map: "Invitation_pending_email_key")
   @@index([email])
 }
 
@@ -376,6 +383,7 @@ model Employee {
   reports   Employee[] @relation("Management")
 
   user                 User?
+  invitations          Invitation[]
   equipmentAssignments EquipmentAssignment[]
   licenses             License[]
   accountAccesses      AccountAccess[]
@@ -476,6 +484,7 @@ model EquipmentAssignment {
   assignedById String?
   assignedBy   User?               @relation(fields: [assignedById], references: [id], onDelete: SetNull)
 
+  @@unique([equipmentId], where: { returnedAt: null }, map: "EquipmentAssignment_active_equipment_key")
   @@index([equipmentId, returnedAt])
   @@index([employeeId, returnedAt])
 }
@@ -554,13 +563,14 @@ model Subscription {
 model License {
   id             String       @id @default(cuid())
   subscriptionId String
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
   employeeId     String
   employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   licenseKey     String? // chiffrée côté application avant stockage
   assignedAt     DateTime     @default(now())
   revokedAt      DateTime?
 
+  @@unique([subscriptionId, employeeId], where: { revokedAt: null }, map: "License_active_subscription_employee_key")
   @@index([subscriptionId, revokedAt])
   @@index([employeeId, revokedAt])
 }
@@ -595,13 +605,14 @@ model SoftwareAccount {
 model AccountAccess {
   id         String          @id @default(cuid())
   accountId  String
-  account    SoftwareAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account    SoftwareAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
   employeeId String
   employee   Employee        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   role       String? // admin, éditeur, lecteur...
   grantedAt  DateTime        @default(now())
   revokedAt  DateTime?
 
+  @@unique([accountId, employeeId], where: { revokedAt: null }, map: "AccountAccess_active_account_employee_key")
   @@index([accountId, revokedAt])
   @@index([employeeId, revokedAt])
 }
@@ -614,8 +625,8 @@ model AccountAccess {
 model Invoice {
   id            String        @id @default(cuid())
   number        String
-  supplierId    String?
-  supplier      Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierId    String
+  supplier      Supplier      @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   issueDate     DateTime      @db.Date
   dueDate       DateTime?     @db.Date
   amountExclTax Decimal       @db.Decimal(12, 2) // HT
