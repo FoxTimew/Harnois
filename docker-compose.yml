@@ -1,0 +1,86 @@
+name: harnois
+
+services:
+  db:
+    image: postgres:17.10-bookworm@sha256:9b18b78397054fce88a9552e9d5a3ad5bb7fd258c5b3cc1c5028e46373d6ea8f
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB required}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sh:/docker-entrypoint-initdb.d/10-test-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  s3-config:
+    image: node:24.13.1-bookworm-slim@sha256:a81a03dd965b4052269a57fac857004022b522a4bf06e7a739e25e18bce45af2
+    command: ["node", "/bootstrap/configure-s3.mjs"]
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY required}
+    volumes:
+      - s3-config:/configuration
+      - ./docker/seaweedfs/configure-s3.mjs:/bootstrap/configure-s3.mjs:ro
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48@sha256:4e61d15fd35994cb1e43e1e553dff106794841fd9a99ade2fc8c8bfce4d7872d
+    command:
+      [
+        "server",
+        "-s3",
+        "-dir=/data",
+        "-ip=seaweedfs",
+        "-ip.bind=0.0.0.0",
+        "-volume.max=32",
+        "-s3.config=/configuration/s3.json",
+      ]
+    working_dir: /data
+    depends_on:
+      s3-config:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - s3-data:/data
+      - s3-config:/configuration:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -S -O /dev/null http://localhost:8333 2>&1 | grep -q '403 Forbidden'",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  s3-bucket:
+    image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+    entrypoint: ["sh", "/bootstrap/create-bucket.sh"]
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      S3_ENDPOINT: http://seaweedfs:8333
+      S3_REGION: ${S3_REGION:?S3_REGION required}
+      S3_BUCKET: ${S3_BUCKET:?S3_BUCKET required}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY required}
+    volumes:
+      - ./docker/seaweedfs/create-bucket.sh:/bootstrap/create-bucket.sh:ro
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6@sha256:23fe39e81bde596a918000b3135c0f85dc8bb4c9ea6be274b051143f3e300387
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  postgres-data:
+  s3-data:
+  s3-config:
