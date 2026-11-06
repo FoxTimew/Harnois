@@ -60,11 +60,12 @@
 ## Points ouverts
 
 - [PR #1](https://github.com/FoxTimew/Harnois/pull/1) ouverte, non mergée.
-  CI GitHub en attente de runner : verify exige self-hosted/linux/harnois-ci,
-  mais GitHub ne liste que MATTHIEU-IT, en ligne, avec les labels self-hosted/Windows/X64.
-  Aucune étape du job n'a pu s'exécuter ; aucun log d'échec applicatif n'est disponible.
-  Le propriétaire doit mettre à disposition le runner Linux prévu et son script
-  /opt/harnois-ci/ci.sh. Aucun workflow ni paramètre de dépôt n'a été modifié.
+  Le runner Linux VMGIT est disponible depuis le 6 novembre 2026 et porte les
+  labels requis self-hosted/Linux/harnois-ci. Le checkout réussit, mais verify
+  échoue avant npm ci : `/opt/harnois-ci/ci.sh: No such file or directory`, code 127.
+  Cause vérifiée avec `gh run view 42066983211 --log-failed` (tentative 2).
+  Le propriétaire doit installer ou rétablir le script serveur prévu à cet emplacement.
+  Aucun workflow ni paramètre de dépôt n'a été modifié.
   La phase ne peut pas être déclarée terminée tant que cette CI n'est pas verte.
 - `npm audit` : aucune vulnérabilité de production ; 10 alertes modérées
   d'outillage, issues de minimatch ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
