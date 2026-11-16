@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { emailSchema } from "@/lib/validation";
 
 const optionalString = z.preprocess(
   (value) => (value === "" ? undefined : value),
@@ -34,6 +35,22 @@ const serverEnvSchema = z
       (value) => (value === "" ? undefined : value),
       port.optional(),
     ),
+    SMTP_USER: optionalString,
+    SMTP_PASSWORD: optionalString,
+    SMTP_FROM: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      emailSchema.optional(),
+    ),
+    SMTP_FROM_NAME: optionalString,
+    SMTP_SECURE: z
+      .enum(["true", "false", ""])
+      .optional()
+      .transform((v) => v === "true"),
+    SMTP_REQUIRE_TLS: z
+      .enum(["true", "false", ""])
+      .optional()
+      .transform((v) => v === "true"),
+    APP_BIND_ADDRESS: optionalString,
     S3_ENDPOINT: optionalUrl,
     S3_REGION: optionalString,
     S3_BUCKET: z.preprocess(
@@ -58,6 +75,42 @@ const serverEnvSchema = z
     POSTGRES_PORT: port.optional(),
   })
   .superRefine((env, ctx) => {
+    if (!z.url().safeParse(env.BETTER_AUTH_URL).success) return;
+    const authUrl = new URL(env.BETTER_AUTH_URL);
+    if (
+      authUrl.protocol !== "https:" &&
+      !["localhost", "127.0.0.1", "[::1]"].includes(authUrl.hostname)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["BETTER_AUTH_URL"],
+        message: "HTTPS required outside localhost",
+      });
+    }
+    if (
+      authUrl.username ||
+      authUrl.password ||
+      authUrl.search ||
+      authUrl.hash ||
+      authUrl.pathname !== "/"
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["BETTER_AUTH_URL"],
+        message: "An origin without credentials or path is required",
+      });
+    }
+    if (
+      authUrl.protocol === "https:" &&
+      env.MICROSOFT_TENANT_ID &&
+      !z.uuid().safeParse(env.MICROSOFT_TENANT_ID).success
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["MICROSOFT_TENANT_ID"],
+        message: "An organization tenant UUID is required",
+      });
+    }
     const groups = [
       ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
       ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET", "MICROSOFT_TENANT_ID"],
