@@ -65,6 +65,11 @@ la livraison d'emails sont simulés dans la suite d'intégration.
 - Générateur Nginx : modèle produit et entrée URL invalide refusée.
 - Audit npm production : **0 vulnérabilité** au 16 novembre 2026. Les alertes
   d'outillage héritées restent décrites dans PROGRESS.md.
+- Contrôle récursif des paquets du standalone : un composant embarqué par Next.js
+  stable reste identifié comme canary (`next/dist/compiled/react-is`, version
+  `19.3.0-canary-278794d7-20261002`). Exception explicitement autorisée par le
+  propriétaire le 16 novembre 2026, conservée dans AGENTS.md. Ce composant n'est
+  pas une nouvelle dépendance du verrou ; Prisma/@visx/gensync restent absents.
 
 ## Limites
 

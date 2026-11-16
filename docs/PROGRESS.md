@@ -43,6 +43,8 @@
 
 ### Phase 01
 
+- [PR #2](https://github.com/FoxTimew/Harnois/pull/2) ouverte vers main depuis
+  `feat/01-auth-invitations`, sans merge. Résultats CI disponibles dans ses checks.
 - Authentification Better Auth 1.7.15 : email/mot de passe, Google et Microsoft,
   inscription uniquement sur invitation ; aucune adaptation interne de la bibliothèque.
 - Réservation atomique par updateMany conditionnel, rôle/employé fixés dès la création,
@@ -80,6 +82,10 @@
   Les 19 nouvelles versions du verrou sont stables et antérieures au 2 novembre 2026,
   vérifiées auprès du registre npm. Date limite .npmrc actualisée ; exceptions
   transitives de phase 00 maintenues, aucune nouvelle exception dans le verrou.
+- Contrôle approfondi du standalone : le propriétaire autorise le 16 novembre 2026
+  le composant embarqué `next/dist/compiled/react-is@19.3.0-canary-278794d7-20261002`
+  de Next.js 16.4.2, déjà présent dans cette version stable. Il n'a pas d'entrée
+  distincte dans le verrou et reste dans l'image, contrairement aux exceptions Prisma/Babel.
 - Réservation indépendante de la création native : si celle-ci échoue après réservation,
   l'ADMIN révoque puis réinvite. Ce cas résiduel est accepté, documenté et testé.
 - Suppression du Account technique lors d'une déliaison autorisée avec audit durable.
