@@ -6,6 +6,8 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
+import { PublicSession } from "@/components/auth/public-session";
 
 export default function HomePage() {
   return (
@@ -19,9 +21,7 @@ export default function HomePage() {
             harnois<span className="text-accent-foreground">.</span>
           </span>
         </div>
-        <span className="text-xs font-medium tracking-wide text-muted-foreground">
-          ESPACE INTERNE
-        </span>
+        <PublicSession />
       </header>
 
       <main
@@ -34,7 +34,7 @@ export default function HomePage() {
               className="size-1.5 rounded-full bg-accent-foreground"
               aria-hidden="true"
             />
-            Un nouvel espace se prépare
+            Votre espace de travail
           </div>
           <h1 className="text-6xl font-semibold tracking-[-0.07em] sm:text-8xl">
             Harnois<span className="text-accent-foreground">.</span>
@@ -51,7 +51,9 @@ export default function HomePage() {
             <span className="flex size-8 items-center justify-center rounded-full border border-border">
               <ArrowUpRight size={16} aria-hidden="true" />
             </span>
-            Bientôt disponible, au bureau comme en déplacement.
+            <Link href="/login" className="underline underline-offset-4">
+              Accéder à mon espace
+            </Link>
           </div>
         </div>
 

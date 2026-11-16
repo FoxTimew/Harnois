@@ -5,11 +5,12 @@ loadTestEnvironment();
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
-  use: { baseURL: "http://127.0.0.1:3000", trace: "retain-on-failure" },
+  use: { baseURL: "http://127.0.0.1:3041", trace: "retain-on-failure" },
   projects: [
     {
       name: "mobile",
@@ -21,9 +22,22 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1",
-    url: "http://127.0.0.1:3000",
+    command: "npm run dev -- --hostname 127.0.0.1 --port 3041",
+    url: "http://127.0.0.1:3041",
     reuseExistingServer: false,
     timeout: 120000,
+    env: {
+      BETTER_AUTH_URL: "http://127.0.0.1:3041",
+      SMTP_HOST: "",
+      SMTP_PORT: "",
+      SMTP_FROM: "",
+      SMTP_USER: "",
+      SMTP_PASSWORD: "",
+      GOOGLE_CLIENT_ID: "",
+      GOOGLE_CLIENT_SECRET: "",
+      MICROSOFT_CLIENT_ID: "",
+      MICROSOFT_CLIENT_SECRET: "",
+      MICROSOFT_TENANT_ID: "",
+    },
   },
 });
