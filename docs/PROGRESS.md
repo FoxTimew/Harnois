@@ -33,6 +33,12 @@
   L'image applicative ne contient ni fichier .env, ni CLI Prisma, ni @visx, ni gensync.
 - Schéma, configuration Prisma et workflows du commit de départ inchangés.
   Ancien `partial_indexes.sql` supprimé conformément au plan révisé.
+- [PR #1](https://github.com/FoxTimew/Harnois/pull/1) ouverte, non mergée.
+  CI GitHub validée le 16 novembre 2026 sur le runner Linux VMGIT :
+  [verify réussi en 4 min 22 s](https://github.com/FoxTimew/Harnois/actions/runs/42228834110/attempts/3),
+  avec npm ci, génération Prisma, migration initiale sur base jetable, lint,
+  typecheck, 30 tests et build. Le statut du dernier commit reste consultable sur la PR.
+  Le déploiement est volontairement ignoré pour une PR ; aucun merge effectué.
 
 ## Décisions
 
@@ -56,22 +62,19 @@
   slim et sortie standalone uniquement pour le serveur applicatif.
 - SeaweedFS dispose de 32 emplacements de volumes : cinq étaient insuffisants
   après l'allocation de la collection par défaut, empêchant les écritures du bucket.
+- Le propriétaire a installé les prérequis et le script `/opt/harnois-ci/ci.sh`
+  sur Ubuntu 26.04, sous Node 24.13.1 et PostgreSQL 17.10. Ce script serveur reste
+  hors Git et utilise une base jetable par exécution ; aucun Docker dans le job.
 
 ## Points ouverts
 
-- [PR #1](https://github.com/FoxTimew/Harnois/pull/1) ouverte, non mergée.
-  Le runner Linux VMGIT est disponible depuis le 6 novembre 2026 et porte les
-  labels requis self-hosted/Linux/harnois-ci. Le checkout réussit, mais verify
-  échoue avant npm ci : `/opt/harnois-ci/ci.sh: No such file or directory`, code 127.
-  Cause vérifiée avec `gh run view 42066983211 --log-failed` (tentative 2).
-  Le propriétaire doit installer ou rétablir le script serveur prévu à cet emplacement.
-  Aucun workflow ni paramètre de dépôt n'a été modifié.
-  La phase ne peut pas être déclarée terminée tant que cette CI n'est pas verte.
-- `npm audit` : aucune vulnérabilité de production ; 10 alertes modérées
+- Audit réévalué le 16 novembre 2026 : aucune vulnérabilité de production ; 9 alertes modérées
   d'outillage, issues de minimatch ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
-  Le correctif minimatch 11.0.1 est publié le 27 octobre 2026 à 22:26 UTC et ne
-  respecte pas encore les 14 jours. Réévaluer sa mise à jour après le
-  10 novembre 2026 à 22:26 UTC, conformément à la politique de dépendances.
+  Le correctif minimatch 11.0.1, publié le 27 octobre 2026 à 22:26 UTC, respecte
+  désormais les 14 jours. Son intégration reste à valider : ESLint, config-array
+  et typescript-estree demandent actuellement minimatch 10.x. Ne pas forcer une
+  version majeure transitive sans valider ces consommateurs ; prévoir une mise
+  à jour compatible de l'outillage et de la date limite de résolution npm.
 
 ## Plus tard
 
