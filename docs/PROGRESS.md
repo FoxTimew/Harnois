@@ -33,14 +33,65 @@
   L'image applicative ne contient ni fichier .env, ni CLI Prisma, ni @visx, ni gensync.
 - Schéma, configuration Prisma et workflows du commit de départ inchangés.
   Ancien `partial_indexes.sql` supprimé conformément au plan révisé.
-- [PR #1](https://github.com/FoxTimew/Harnois/pull/1) ouverte, non mergée.
+- [PR #1](https://github.com/FoxTimew/Harnois/pull/1) mergée, base de la phase 01 :
+  `cac5326b36b8be76785219d6c4045733e82ccdc8`.
   CI GitHub validée le 16 novembre 2026 sur le runner Linux VMGIT :
   [verify réussi en 4 min 22 s](https://github.com/FoxTimew/Harnois/actions/runs/42228834110/attempts/3),
   avec npm ci, génération Prisma, migration initiale sur base jetable, lint,
   typecheck, 30 tests et build. Le statut du dernier commit reste consultable sur la PR.
-  Le déploiement est volontairement ignoré pour une PR ; aucun merge effectué.
+  Le déploiement est volontairement ignoré pour une PR.
+
+### Phase 01
+
+- Authentification Better Auth 1.7.15 : email/mot de passe, Google et Microsoft,
+  inscription uniquement sur invitation ; aucune adaptation interne de la bibliothèque.
+- Réservation atomique par updateMany conditionnel, rôle/employé fixés dès la création,
+  email vérifié par le lien, cookie d'invitation signé et temporaire sans jeton brut.
+- Liaison automatique Google vérifié uniquement, Microsoft explicite avec session
+  récente recontrôlée au callback ; dernière méthode protégée même en concurrence.
+- requireUser central, sessions de 7 jours sans cache cookie, renouvellement à 24 h,
+  utilisateurs désactivés refusés ; champs additionnels non modifiables par le client.
+- Compteurs RateLimit PostgreSQL, limite par IP et SHA-256 d'email, journal sans
+  données personnelles ni secrets, télémétrie Better Auth désactivée.
+- Seule évolution du schéma : RateLimit et migration auth_rate_limit. Second
+  migrate dev : « Already in sync, no schema change or pending migration was found. »
+- Pages françaises de connexion, invitation, récupération, sécurité et administration
+  des invitations. 8 tests Playwright verts à 375/1280 px ; captures relues dans
+  `docs/screenshots/phase01/`, sans débordement ni erreur JavaScript du parcours principal.
+- 96 tests Vitest verts : 30 existants et 66 nouveaux (9 unitaires, 57 intégration).
+  Les tests attendus sont détaillés dans `docs/PHASE01-VALIDATION.md`.
+- lint, typecheck et build réussis localement. Images app/migrate construites sans
+  variables applicatives au build ; migration sur base vide et standalone non root
+  sain sous UID 1000. Absence de Prisma CLI, @visx, gensync et fichier .env dans app.
+- Commande premier ADMIN vérifiée localement et dans le projet Docker local nommé
+  harnois-staging, lien accepté par HTTP et seconde commande correctement refusée.
+- Envoi SMTP réel vers Mailpit local reçu en HTML français et texte. Transport
+  externe non nécessaire pour les tests ; absence de SMTP gérée sans bloquer le serveur.
+- Documentation des callbacks, SMTP, récupération des réservations, Nginx et
+  changements IP/URL ; commande exacte sous harnois-deploy avec l'env-file serveur.
+- Séquence complète du runner reproduite sous Linux Node 24, sans .env et avec
+  uniquement les quatre variables applicatives : npm ci, generate, migrate deploy,
+  lint, typecheck, 96 tests et build réussis. Le statut GitHub de référence reste
+  celui du dernier commit de la PR phase 01 ; aucun merge autorisé.
 
 ## Décisions
+
+- Phase 01 : better-auth et @better-auth/prisma-adapter 1.7.15, nodemailer 10.3.1.
+  Les 19 nouvelles versions du verrou sont stables et antérieures au 2 novembre 2026,
+  vérifiées auprès du registre npm. Date limite .npmrc actualisée ; exceptions
+  transitives de phase 00 maintenues, aucune nouvelle exception dans le verrou.
+- Réservation indépendante de la création native : si celle-ci échoue après réservation,
+  l'ADMIN révoque puis réinvite. Ce cas résiduel est accepté, documenté et testé.
+- Suppression du Account technique lors d'une déliaison autorisée avec audit durable.
+- Seuls les endpoints Better Auth nécessaires à cette phase sont exposés ; édition
+  générique du profil, changement d'email et autres mutations restent fermés.
+- Compteur email : réservation provisoire d'une tentative pour limiter la concurrence,
+  puis remise à zéro à la connexion réussie. Aucun email clair dans RateLimit.
+- Nginx écrase X-Real-IP ; app liée à 127.0.0.1 par défaut. Proxy distant : IP privée
+  et pare-feu obligatoire. Modèle générable sans secrets, aucune recharge automatique.
+- Le modèle Nginx supprime les logs d'erreur de ce virtual host pour éviter les URI
+  à jeton ; logs d'accès limités à date, méthode, statut, taille et catégorie.
+- Playwright utilise le port 3041, le port 3000 étant utilisé par un autre projet local.
 
 - Node.js 24 ; TypeScript 6.0.3 fonctionne avec Next.js 16.4.2 et typescript-eslint 8.72.0.
 - Index partiels Prisma déclaratifs : aucune modification manuelle des migrations.
@@ -68,6 +119,14 @@
 
 ## Points ouverts
 
+- Vérification réelle Google/Microsoft avec les applications OAuth du propriétaire,
+  consentements, tenant organisation et callbacks configurés.
+- Validation réelle du relais SMTP Brevo et de son expéditeur (Mailpit local vérifié).
+- Installation/relecture Nginx, certificat TLS, DNS LAN vers 192.168.1.63, position
+  réelle du proxy et filtrage du port app : non accessibles depuis cette session.
+- La réservation peut rester consommée sans compte en cas de panne après updateMany ;
+  procédure de récupération documentée, pas de compensation silencieuse.
+
 - Audit réévalué le 16 novembre 2026 : aucune vulnérabilité de production ; 9 alertes modérées
   d'outillage, issues de minimatch ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
   Le correctif minimatch 11.0.1, publié le 27 octobre 2026 à 22:26 UTC, respecte
@@ -78,7 +137,8 @@
 
 ## Plus tard
 
-- Phase 01 : authentification, invitations, permissions et refus d'accès testés.
+- Purge bornée des compteurs RateLimit expirés avec les tâches d'entretien.
+- Phase 11 : remplacer le SMTP direct par une file d'envoi avec reprise des échecs.
 - Phase 02 : 2FA obligatoire selon rôle et politique utilisateur.
 - Phases métier : invariants transactionnels décrits dans AGENTS.md.
 - Phase 07 : choix du stockage S3 de production.

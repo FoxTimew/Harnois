@@ -68,6 +68,14 @@ en français ; code, variables, branches et commits en anglais.
 - 2FA obligatoire pour ADMIN, IT_MANAGER, TECHNICIAN et tout utilisateur avec
   mfaEnforced=true, y compris après Google ou Microsoft.
 - Inscription uniquement sur invitation.
+- Phase 01 validée : réservation conditionnelle de l'invitation dans le hook public
+  avant création, audit après création ; ne jamais modifier l'adaptateur Better Auth.
+  Si la création échoue après réservation, révoquer et réinviter.
+- Liaison automatique par email : Google vérifié seulement. Microsoft exige
+  une liaison explicite avec session récente. Ne jamais délier la dernière méthode.
+  Exception validée : supprimer le Account technique délié, avec audit sans jetons.
+- Les champs additionnels User/Session restent input:false. La vérification MFA
+  sera activée en phase 02 ; elle est volontairement non bloquante en phase 01.
 - Secrets TOTP et clés de licence chiffrés en AES-256-GCM avec ENCRYPTION_KEY.
   ENCRYPTION_KEY : 32 octets encodés en 64 caractères hexadécimaux ; codes de secours hachés.
 - Aucun mot de passe de logiciel tiers stocké dans l'application.

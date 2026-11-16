@@ -1,8 +1,9 @@
 # Harnois
 
 Webapp interne de gestion de parc informatique. Interface en français, utilisable
-sur ordinateur et téléphone. La phase 00 livre uniquement le socle technique et
-une page d'accueil provisoire ; l'authentification arrive en phase 01.
+sur ordinateur et téléphone. La phase 01 ajoute la connexion sur invitation,
+les méthodes Google/Microsoft et les parcours de récupération.
+Voir [le fonctionnement et le déploiement de l'authentification](docs/AUTHENTICATION.md).
 
 ## Prérequis
 
@@ -29,7 +30,8 @@ par Git et exclus des images Docker. Ne jamais les afficher dans les logs.
 - Générer BETTER_AUTH_SECRET et ENCRYPTION_KEY : `openssl rand -hex 32` pour chacune.
   ENCRYPTION_KEY doit comporter exactement 64 caractères hexadécimaux.
 - Définir les clés S3 locales et conserver le bucket `harnois-dev`.
-- Laisser les identifiants Google, Microsoft et Brevo vides en phase 00.
+- Les identifiants Google/Microsoft restent facultatifs ; les boutons sont alors désactivés.
+- SMTP local : localhost:1025, SMTP_FROM renseigné, SMTP_SECURE=false et SMTP_REQUIRE_TLS=false.
 
 Depuis une installation propre, exécuter :
 
@@ -74,6 +76,8 @@ volumes contenant des données à conserver. `docker compose stop` conserve les 
   Pour créer une migration nommée, utiliser la commande explicite ci-dessous.
 - `npm run db:seed` : données de démonstration idempotentes ; ne crée aucun utilisateur.
 - `npm run db:test:migrate` : applique les migrations uniquement à la base de test configurée.
+- `npm run auth:invite-admin -- --email admin@example.org` : invite le premier ADMIN,
+  affiche le lien confidentiel et refuse si un administrateur existe déjà.
 
 Pour créer une migration nommée :
 
@@ -102,13 +106,16 @@ npm run build
 En local, Vitest et Playwright chargent `.env.test`, qui remplace une éventuelle
 DATABASE_URL héritée du terminal. Ils refusent toute base ne s'appelant pas
 `harnois_test`. Aucun test d'intégration ne modifie la base de développement.
-Les écritures des tests sont isolées dans des transactions annulées après chaque
-test, même en cas d'échec. Le test de lecture/écriture vérifie aussi ce nettoyage.
+Les tests du socle annulent leurs transactions. Les parcours Better Auth utilisent
+de vraies transactions et nettoient uniquement les enregistrements qu'ils créent,
+même en cas d'échec. Playwright réserve le port 3041 et utilise la même base de test.
 
 Les tests couvrent la normalisation des emails, EUR, la configuration du serveur,
 le seed idempotent et l'effet réel des quatre contraintes partielles. Playwright
 vérifie le titre, la langue, l'absence d'erreurs JavaScript et de débordement
-horizontal ; les captures sont dans `test-results/`.
+horizontal ; les captures sont dans `test-results/`. Les tests d'authentification
+couvrent les inscriptions, les refus d'accès, les réservations concurrentes,
+OAuth simulé avec JWT signés, les sessions, les limites et la récupération.
 
 En CI (`CI=true`), aucun fichier local n'est chargé : la base PostgreSQL vide et
 jetable est fournie directement par DATABASE_URL et migrée par le runner.
@@ -127,7 +134,7 @@ npm run build
 ```
 
 Ne pas définir CI=true pour contourner la protection de la base locale.
-Les contrôles d'accès seront testés dès leur introduction en phase 01.
+Les services d'authentification et les refus d'accès par rôle sont testés dès la phase 01.
 
 ## Production
 
@@ -136,16 +143,31 @@ Le propriétaire conserve l'environnement sur le serveur, hors du dépôt. Utili
 Les variables et secrets sont injectés à l'exécution, jamais au build :
 
 ```sh
-docker compose -f compose.prod.yml --env-file /chemin/harnois.env build
-docker compose -f compose.prod.yml --env-file /chemin/harnois.env --profile tools build migrate
-docker compose -f compose.prod.yml --env-file /chemin/harnois.env up -d db
-docker compose -f compose.prod.yml --env-file /chemin/harnois.env --profile tools run --rm migrate
-docker compose -f compose.prod.yml --env-file /chemin/harnois.env up -d app
+docker compose -p harnois-staging -f compose.prod.yml --env-file /opt/harnois-ci/env/staging.env --profile tools build
+docker compose -p harnois-staging -f compose.prod.yml --env-file /opt/harnois-ci/env/staging.env up -d db
+docker compose -p harnois-staging -f compose.prod.yml --env-file /opt/harnois-ci/env/staging.env run --rm migrate
+docker compose -p harnois-staging -f compose.prod.yml --env-file /opt/harnois-ci/env/staging.env up -d app
 ```
 
-Trois services : app (utilisateur non root, port APP_PORT), db (volume persistant,
+Premier administrateur : exécuter sous **harnois-deploy**, depuis le dossier de
+travail du dernier déploiement, avec le même nom de projet Compose :
+
+```sh
+docker compose -p harnois-staging -f compose.prod.yml \
+  --env-file /opt/harnois-ci/env/staging.env \
+  run --rm --entrypoint npm migrate run auth:invite-admin -- --email admin@example.org
+```
+
+En production, adapter le projet en `harnois-production` et l'env-file en
+`/opt/harnois-ci/env/production.env`. Le lien affiché est confidentiel, ne pas
+archiver cette sortie dans des logs. Voir [AUTHENTICATION.md](docs/AUTHENTICATION.md)
+pour les callbacks OAuth, SMTP, Nginx, HTTPS et le changement d'IP/URL sans code.
+
+Trois services : app (utilisateur non root, APP_BIND_ADDRESS:APP_PORT), db (volume persistant,
 aucun port publié), migrate (profil tools). La cible de migration contient la CLI
-Prisma et OpenSSL ; la cible applicative contient seulement le standalone Next.js.
+Prisma, OpenSSL et la commande d'invitation ; la cible applicative contient seulement le standalone Next.js.
+Par défaut le port app est lié à 127.0.0.1 pour un Nginx sur le même hôte.
+S'il est exposé sur une IP privée, le pare-feu doit le réserver au seul proxy.
 Le script `prepare-standalone.mjs` copie `public/` et `.next/static/`, que Next.js
 n'inclut pas automatiquement : le même résultat fonctionne avec `npm start` et Docker.
 
@@ -160,7 +182,7 @@ Une configuration partielle Google, Microsoft ou S3 est refusée au démarrage.
 ## Dépendances et contribution
 
 Les versions directes sont exactes, le verrou est commité. `.npmrc` fixe la date
-limite de résolution à `2026-10-21T22:00:00Z` pour respecter les 14 jours d'ancienneté.
+limite de résolution à `2026-11-02T00:00:00Z` pour respecter les 14 jours d'ancienneté.
 Réévaluer cette date lors d'une future mise à jour de dépendances.
 Les seules exceptions transitives autorisées figurent dans AGENTS.md.
 
