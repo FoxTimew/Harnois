@@ -43,8 +43,9 @@
 
 ### Phase 01
 
-- [PR #2](https://github.com/FoxTimew/Harnois/pull/2) ouverte vers main depuis
-  `feat/01-auth-invitations`, sans merge. Résultats CI disponibles dans ses checks.
+- [PR #2](https://github.com/FoxTimew/Harnois/pull/2) mergée le 24 novembre 2026
+  sur autorisation explicite du propriétaire, au commit
+  `f9b1143cd489ccaa838037b3728803e5a31f8227`. La CI de la PR était verte avant merge.
 - Authentification Better Auth 1.7.15 : email/mot de passe, Google et Microsoft,
   inscription uniquement sur invitation ; aucune adaptation interne de la bibliothèque.
 - Réservation atomique par updateMany conditionnel, rôle/employé fixés dès la création,
@@ -74,10 +75,41 @@
 - Séquence complète du runner reproduite sous Linux Node 24, sans .env et avec
   uniquement les quatre variables applicatives : npm ci, generate, migrate deploy,
   lint, typecheck, 96 tests et build réussis. Le statut GitHub de référence reste
-  celui du dernier commit de la PR phase 01 ; aucun merge autorisé.
+  celui du dernier commit de la PR phase 01.
+
+### Correctif Next.js préalable à la phase 02
+
+- Branche `chore/deps-next-16.4.6`, depuis le main `f9b1143`.
+  Next.js et son plugin ESLint passent de 16.4.2 à 16.4.6. Les onze versions
+  modifiées du verrou appartiennent à Next.js ; elles sont stables et publiées
+  le 9 novembre 2026. Aucune résolution transitive de Prisma n'est forcée.
+- Lint, typecheck, 96 tests Vitest et build réussis avec les seules quatre
+  variables applicatives de CI ; la base locale reste `harnois_test`.
+  Huit tests Playwright réussis à 375 et 1280 px ; captures Accueil et Sécurité
+  relues sans régression visible ni débordement horizontal.
+- Images Docker app et migrate construites sans variables applicatives au build.
+  L'app démarre sous UID 1000 et répond HTTP 200 sur `/`, `/login` et
+  `/api/auth/get-session` avec les quatre variables de test.
+- Effect 3.20.0 est absent du standalone et de l'image app, présent dans
+  l'outillage et l'image migrate via `@prisma/config@7.10.1`.
+  Aucun appel à `Schema.TemplateLiteral` ou à son compilateur d'expressions
+  régulières pendant `prisma generate` et `prisma migrate deploy` : lecture
+  du code et mesure V8 avec témoin positif. Détails et limites dans
+  [la vérification des dépendances](DEPENDENCIES-2026-11-24.md).
+- Aucun changement applicatif, de schéma, de migration, de variable ou de workflow.
+  Phase 02 non commencée : reprise uniquement après feu vert du propriétaire,
+  depuis main à jour.
 
 ## Décisions
 
+- Correctif Next.js : date limite de résolution `.npmrc` avancée au
+  `2026-11-10T00:00:00.000Z`, nécessaire pour les paquets du 9 novembre et
+  conforme à la limite de quatorze jours au 24 novembre. Aucun ajout MFA.
+- Le composant embarqué `react-is@19.3.0-canary-278794d7-20261002`, déjà autorisé,
+  reste identique dans Next.js 16.4.6. Aucune nouvelle exception de préversion.
+- Effect : conserver la version imposée par Prisma, sans override. Attendre
+  une version stable de Prisma embarquant Effect corrigé, publiée depuis plus
+  de quatorze jours, puis revalider migrations, génération et images.
 - Phase 01 : better-auth et @better-auth/prisma-adapter 1.7.15, nodemailer 10.3.1.
   Les 19 nouvelles versions du verrou sont stables et antérieures au 2 novembre 2026,
   vérifiées auprès du registre npm. Date limite .npmrc actualisée ; exceptions
@@ -133,8 +165,16 @@
 - La réservation peut rester consommée sans compte en cas de panne après updateMany ;
   procédure de récupération documentée, pas de compensation silencieuse.
 
-- Audit réévalué le 16 novembre 2026 : aucune vulnérabilité de production ; 9 alertes modérées
-  d'outillage, issues de minimatch ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
+- Audit réévalué le 24 novembre 2026 après mise à jour : aucune entrée Next.js ;
+  douze entrées restent signalées, dont trois hautes pour la chaîne Effect /
+  @prisma/config / Prisma (un même avis) et neuf modérées liées à minimatch.
+  Effect reste vulnérable selon sa version : son absence de l'image app et
+  l'absence d'appel au chemin concerné dans les commandes vérifiées ne
+  constituent pas un correctif du paquet. Suivre
+  [GHSA-7589-6fvf-x4pw](https://github.com/Effect-TS/effect/security/advisories/GHSA-7589-6fvf-x4pw)
+  et attendre une version stable compatible de Prisma ; ne pas forcer la transitive.
+- Les neuf alertes modérées d'outillage proviennent de minimatch
+  ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
   Le correctif minimatch 11.0.1, publié le 27 octobre 2026 à 22:26 UTC, respecte
   désormais les 14 jours. Son intégration reste à valider : ESLint, config-array
   et typescript-estree demandent actuellement minimatch 10.x. Ne pas forcer une
