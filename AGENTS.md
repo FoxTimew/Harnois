@@ -20,6 +20,10 @@ en français ; code, variables, branches et commits en anglais.
   paquets @visx alpha et @prisma/engines-version imposés par Prisma 7.10.1,
   gensync@1.0.0-beta.2 imposé par Babel via eslint-plugin-react-hooks.
   Les conserver verrouillés ; ils ne doivent pas entrer dans l'image applicative standalone.
+- Exception interne Next.js autorisée le 16 novembre 2026 :
+  `next/dist/compiled/react-is@19.3.0-canary-278794d7-20261002`, livré à l'intérieur
+  de Next.js stable 16.4.2 (sans entrée npm distincte). Il reste dans le standalone.
+  Ne pas modifier ce composant embarqué ; réévaluer lors d'une mise à jour de Next.js.
 - Node.js 24 (`>=24 <25`). Ne pas changer la stack sans accord.
 - PWA prévue en phase 12.
 
@@ -68,6 +72,14 @@ en français ; code, variables, branches et commits en anglais.
 - 2FA obligatoire pour ADMIN, IT_MANAGER, TECHNICIAN et tout utilisateur avec
   mfaEnforced=true, y compris après Google ou Microsoft.
 - Inscription uniquement sur invitation.
+- Phase 01 validée : réservation conditionnelle de l'invitation dans le hook public
+  avant création, audit après création ; ne jamais modifier l'adaptateur Better Auth.
+  Si la création échoue après réservation, révoquer et réinviter.
+- Liaison automatique par email : Google vérifié seulement. Microsoft exige
+  une liaison explicite avec session récente. Ne jamais délier la dernière méthode.
+  Exception validée : supprimer le Account technique délié, avec audit sans jetons.
+- Les champs additionnels User/Session restent input:false. La vérification MFA
+  sera activée en phase 02 ; elle est volontairement non bloquante en phase 01.
 - Secrets TOTP et clés de licence chiffrés en AES-256-GCM avec ENCRYPTION_KEY.
   ENCRYPTION_KEY : 32 octets encodés en 64 caractères hexadécimaux ; codes de secours hachés.
 - Aucun mot de passe de logiciel tiers stocké dans l'application.
