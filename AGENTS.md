@@ -75,11 +75,23 @@ en français ; code, variables, branches et commits en anglais.
 - Phase 01 validée : réservation conditionnelle de l'invitation dans le hook public
   avant création, audit après création ; ne jamais modifier l'adaptateur Better Auth.
   Si la création échoue après réservation, révoquer et réinviter.
-- Liaison automatique par email : Google vérifié seulement. Microsoft exige
-  une liaison explicite avec session récente. Ne jamais délier la dernière méthode.
+- Phase 02 : Google et Microsoft exigent une liaison explicite depuis Sécurité,
+  avec preuve récente recontrôlée au callback. Aucune liaison automatique par email.
+  Ne jamais délier la dernière méthode de connexion.
   Exception validée : supprimer le Account technique délié, avec audit sans jetons.
-- Les champs additionnels User/Session restent input:false. La vérification MFA
-  sera activée en phase 02 ; elle est volontairement non bloquante en phase 01.
+- Les champs additionnels User/Session restent input:false. La politique MFA est
+  recalculée en base à chaque requête, après toute connexion, y compris OAuth.
+  Facteur confirmé = TOTP confirmé ou clé WebAuthn ; un code de secours n'est pas un facteur.
+- Session incomplète : seulement GET /api/auth/get-session, POST /api/auth/sign-out
+  et les routes MFA explicitement autorisées pour son état. Aucun plugin 2FA/passkey Better Auth.
+- Actions sensibles : preuve MFA de moins de 10 minutes ; sans facteur, preuve primaire
+  récente. Un EMPLOYEE sans obligation peut supprimer son dernier facteur après cette preuve.
+- Opérations MFA sous verrou utilisateur ; challenges et codes à usage unique.
+  Cinq échecs toutes méthodes confondues en 15 minutes bloquent pendant 15 minutes.
+  Les échecs, compteurs et consommations doivent être commités avant de répondre en erreur.
+- Notifications MFA après commit ; échec d'envoi audité sans annuler l'action.
+  Suppression technique des facteurs/codes lors d'une réinitialisation autorisée,
+  avec audit durable et révocation de toutes les sessions.
 - Secrets TOTP et clés de licence chiffrés en AES-256-GCM avec ENCRYPTION_KEY.
   ENCRYPTION_KEY : 32 octets encodés en 64 caractères hexadécimaux ; codes de secours hachés.
 - Aucun mot de passe de logiciel tiers stocké dans l'application.

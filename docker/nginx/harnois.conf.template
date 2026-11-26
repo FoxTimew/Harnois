@@ -2,7 +2,7 @@
 # No raw URI, query, IP, referer, cookie, body or user agent in access logs.
 map $uri $harnois_route {
     default application;
-    ~^/(api/auth|api/invitations|invitation|reset-password|verify-email)(/|$) authentication;
+    ~^/(api/auth|api/invitations|api/mfa|mfa|invitation|reset-password|verify-email)(/|$) authentication;
 }
 log_format harnois_safe '$time_iso8601 $request_method $status $body_bytes_sent $harnois_route';
 
@@ -11,7 +11,8 @@ server {
     server_name @@HOST@@;
     access_log /var/log/nginx/harnois-access.log harnois_safe;
     # Nginx error logs may include the entire request URI, including bearer links.
-    error_log /dev/null;
+    # Create the parent directory as root:root 0700 before loading this configuration.
+    error_log /var/log/nginx/harnois/error.log error;
     return 308 https://@@HOST@@$request_uri;
 }
 server {
@@ -21,7 +22,7 @@ server {
     ssl_certificate_key @@KEY@@;
     ssl_protocols TLSv1.2 TLSv1.3;
     access_log /var/log/nginx/harnois-access.log harnois_safe;
-    error_log /dev/null;
+    error_log /var/log/nginx/harnois/error.log error;
     add_header Referrer-Policy no-referrer always;
     client_max_body_size 1m;
     location / {

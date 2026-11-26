@@ -2,7 +2,8 @@
 
 Webapp interne de gestion de parc informatique. Interface en français, utilisable
 sur ordinateur et téléphone. La phase 01 ajoute la connexion sur invitation,
-les méthodes Google/Microsoft et les parcours de récupération.
+les méthodes Google/Microsoft et les parcours de récupération. La phase 02 ajoute
+la double authentification TOTP, clés de sécurité et codes de secours, y compris après OAuth.
 Voir [le fonctionnement et le déploiement de l'authentification](docs/AUTHENTICATION.md).
 
 ## Prérequis
@@ -78,6 +79,9 @@ volumes contenant des données à conserver. `docker compose stop` conserve les 
 - `npm run db:test:migrate` : applique les migrations uniquement à la base de test configurée.
 - `npm run auth:invite-admin -- --email admin@example.org` : invite le premier ADMIN,
   affiche le lien confidentiel et refuse si un administrateur existe déjà.
+- `npm run auth:reset-mfa -- --email admin@example.org` : après confirmation explicite,
+  réinitialise les facteurs et codes de secours et révoque toutes les sessions.
+  Réservé à l'opérateur ; procédure de secours dans [AUTHENTICATION.md](docs/AUTHENTICATION.md).
 
 Pour créer une migration nommée :
 
@@ -116,6 +120,9 @@ vérifie le titre, la langue, l'absence d'erreurs JavaScript et de débordement
 horizontal ; les captures sont dans `test-results/`. Les tests d'authentification
 couvrent les inscriptions, les refus d'accès, les réservations concurrentes,
 OAuth simulé avec JWT signés, les sessions, les limites et la récupération.
+Les tests MFA utilisent des réponses WebAuthn réellement signées et un authentificateur
+virtuel Chromium. Le test matériel utilise `http://localhost:3041`, jamais l'adresse
+IP littérale : voir le parcours YubiKey et téléphone dans AUTHENTICATION.md.
 
 En CI (`CI=true`), aucun fichier local n'est chargé : la base PostgreSQL vide et
 jetable est fournie directement par DATABASE_URL et migrée par le runner.
@@ -165,7 +172,8 @@ pour les callbacks OAuth, SMTP, Nginx, HTTPS et le changement d'IP/URL sans code
 
 Trois services : app (utilisateur non root, APP_BIND_ADDRESS:APP_PORT), db (volume persistant,
 aucun port publié), migrate (profil tools). La cible de migration contient la CLI
-Prisma, OpenSSL et la commande d'invitation ; la cible applicative contient seulement le standalone Next.js.
+Prisma, OpenSSL et les commandes d'invitation et de secours MFA ; la cible applicative
+contient seulement le standalone Next.js.
 Par défaut le port app est lié à 127.0.0.1 pour un Nginx sur le même hôte.
 S'il est exposé sur une IP privée, le pare-feu doit le réserver au seul proxy.
 Le script `prepare-standalone.mjs` copie `public/` et `.next/static/`, que Next.js
@@ -182,7 +190,7 @@ Une configuration partielle Google, Microsoft ou S3 est refusée au démarrage.
 ## Dépendances et contribution
 
 Les versions directes sont exactes, le verrou est commité. `.npmrc` fixe la date
-limite de résolution à `2026-11-02T00:00:00Z` pour respecter les 14 jours d'ancienneté.
+limite de résolution à `2026-11-10T00:00:00Z` pour respecter les 14 jours d'ancienneté.
 Réévaluer cette date lors d'une future mise à jour de dépendances.
 Les seules exceptions transitives autorisées figurent dans AGENTS.md.
 
