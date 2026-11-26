@@ -1,3 +1,4 @@
+import { guardIncompletePage } from "@/server/auth/require-page-user";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
 import { providerAvailability } from "@/server/auth/providers";
@@ -6,6 +7,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; registered?: string }>;
 }) {
+  await guardIncompletePage();
   const query = await searchParams;
   return (
     <AuthShell

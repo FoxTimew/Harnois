@@ -1,3 +1,4 @@
+import { guardIncompletePage } from "@/server/auth/require-page-user";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ResetPasswordForm } from "@/components/auth/recovery-form";
@@ -6,6 +7,7 @@ export default async function ResetPasswordPage({
 }: {
   searchParams: Promise<{ token?: string; error?: string }>;
 }) {
+  await guardIncompletePage();
   const { token, error } = await searchParams;
   return (
     <AuthShell

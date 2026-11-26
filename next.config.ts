@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
       "/verify-email",
       "/api/auth/:path*",
       "/api/invitations/:path*",
+      "/api/mfa/:path*",
+      "/mfa/:path*",
+      "/profile/:path*",
     ].map((source) => ({
       source,
       headers: [

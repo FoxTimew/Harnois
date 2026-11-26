@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+import { guardIncompletePage } from "@/server/auth/require-page-user";
 import {
   ArrowUpRight,
   Laptop,
@@ -9,7 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { PublicSession } from "@/components/auth/public-session";
 
-export default function HomePage() {
+export default async function HomePage() {
+  await guardIncompletePage();
   return (
     <div className="mx-auto flex min-h-svh max-w-7xl flex-col px-6 sm:px-10 lg:px-16">
       <header className="flex items-center justify-between border-b border-border py-6 sm:py-8">

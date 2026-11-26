@@ -1,3 +1,4 @@
+import { guardIncompletePage } from "@/server/auth/require-page-user";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RecoveryForm } from "@/components/auth/recovery-form";
@@ -7,6 +8,7 @@ export default async function VerifyEmailPage({
 }: {
   searchParams: Promise<{ verified?: string; error?: string }>;
 }) {
+  await guardIncompletePage();
   const query = await searchParams;
   return (
     <AuthShell

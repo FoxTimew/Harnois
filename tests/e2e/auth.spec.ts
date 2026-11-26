@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
+import { generate } from "otplib";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../src/generated/prisma/client";
 
@@ -46,6 +47,11 @@ test.afterEach(async () => {
   await db.rateLimit.deleteMany({
     where: {
       OR: [
+        ...ids.map((id) => ({
+          key: {
+            startsWith: `mfa:${createHash("sha256").update(id).digest("hex")}:`,
+          },
+        })),
         { key: { startsWith: `${ip}|` } },
         { key: createHash("sha256").update(email).digest("hex") },
         {
@@ -117,6 +123,20 @@ test("admin invitation form is protected by role and displays delivery failures"
   await page.getByLabel("Adresse email").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await expect(page).toHaveURL(/\/mfa\/setup/);
+  const enrollment = await page.request.post("/api/mfa/totp/enroll", {
+    data: {},
+    headers: { origin: "http://localhost:3041" },
+  });
+  expect(enrollment.ok()).toBe(true);
+  const { secret } = await enrollment.json();
+  const confirmation = await page.request.post("/api/mfa/totp/confirm", {
+    data: { code: await generate({ secret }) },
+    headers: { origin: "http://localhost:3041" },
+  });
+  expect(confirmation.ok()).toBe(true);
+  const { recoveryCodes } = await confirmation.json();
+  await page.goto("/profile/security");
   await expect(page).toHaveURL(/\/profile\/security$/);
   await page.getByRole("link", { name: "Invitations", exact: true }).click();
   await expect(
@@ -138,6 +158,24 @@ test("admin invitation form is protected by role and displays delivery failures"
       "L’envoi d’emails est temporairement indisponible. Contactez votre administrateur.",
     ),
   ).toBeVisible();
+  await db.session.updateMany({
+    where: { userId: user.id },
+    data: { mfaVerifiedAt: null, mfaMethod: null },
+  });
+  await page.getByRole("button", { name: "Envoyer l’invitation" }).click();
+  await expect(
+    page.getByText(
+      "Terminez votre double authentification avant de continuer.",
+    ),
+  ).toBeVisible();
+  expect(
+    (
+      await page.request.post("/api/mfa/recovery/verify", {
+        data: { code: recoveryCodes[0] },
+        headers: { origin: "http://localhost:3041" },
+      })
+    ).ok(),
+  ).toBe(true);
   await db.user.update({ where: { id: user.id }, data: { role: "EMPLOYEE" } });
   await page.getByLabel("Adresse email").fill("invited@example.invalid");
   await page.getByRole("button", { name: "Envoyer l’invitation" }).click();
@@ -145,9 +183,7 @@ test("admin invitation form is protected by role and displays delivery failures"
     page.getByText("Vous n’avez pas les droits nécessaires."),
   ).toBeVisible();
   await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "Accès non autorisé" }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/profile\/security$/);
 });
 test("public recovery pages work and invalid invitations remain neutral", async ({
   page,
