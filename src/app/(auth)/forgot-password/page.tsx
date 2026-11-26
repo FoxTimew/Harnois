@@ -1,6 +1,8 @@
+import { guardIncompletePage } from "@/server/auth/require-page-user";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RecoveryForm } from "@/components/auth/recovery-form";
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+  await guardIncompletePage();
   return (
     <AuthShell
       title="Un nouveau départ."

@@ -2,6 +2,9 @@ import "server-only";
 import { readJson } from "./read-json";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getSessionCookie } from "better-auth/cookies";
+import { requireUser, type SessionReader } from "./require-user";
+import { ServiceError } from "@/server/services/errors";
 import { invitationTokenSchema } from "@/lib/validation";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { ServerEnv } from "@/server/env";
@@ -17,6 +20,7 @@ export async function prepareInvitation(
   request: Request,
   db: PrismaClient,
   env: ServerEnv,
+  readSession?: SessionReader,
 ) {
   const headers = {
     "Cache-Control": "no-store",
@@ -27,6 +31,25 @@ export async function prepareInvitation(
       { code: "INVALID_ORIGIN" },
       { status: 403, headers },
     );
+  if (getSessionCookie(request)) {
+    try {
+      await requireUser({ headers: request.headers, db, readSession });
+    } catch (error) {
+      if (!(error instanceof ServiceError && error.code === "UNAUTHENTICATED"))
+        return NextResponse.json(
+          {
+            code:
+              error instanceof ServiceError
+                ? error.code
+                : "AUTHENTICATION_UNAVAILABLE",
+          },
+          {
+            status: error instanceof ServiceError ? error.status : 503,
+            headers,
+          },
+        );
+    }
+  }
   if (
     !(await consumeRateLimit(
       db,

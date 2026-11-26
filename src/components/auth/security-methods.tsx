@@ -100,7 +100,9 @@ export function SecurityMethods({
       </div>
       <p className="text-sm leading-6 text-muted-foreground">
         Conservez au moins une méthode de connexion. Pour lier ou délier un
-        compte, votre dernière connexion doit dater de moins de 5 minutes.
+        compte, confirmez votre identité dans la section Double
+        authentification. Cette vérification reste valable 10 minutes. Google et
+        Microsoft exigent tous deux une liaison explicite depuis cette page.
       </p>
       <Link
         href="/login"

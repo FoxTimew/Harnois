@@ -7,6 +7,9 @@ import {
   type AuthFixture,
 } from "../fixtures/auth";
 import { prepareInvitation } from "@/server/auth/prepare-invitation";
+import { requireUser } from "@/server/auth/require-user";
+import { MfaService } from "@/server/services/mfa";
+import { generate } from "otplib";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", {
   modulusLength: 2048,
@@ -231,14 +234,74 @@ describe("OAuth redirect flows with signed test IdP tokens and real PostgreSQL",
     ).toBe(0);
     expect(await f.db.session.count({ where: { userId: user.id } })).toBe(0);
   });
-  it("links Google automatically only with a verified profile and never duplicates an email", async () => {
+  it("refuses automatic Google linking and requires an explicit verified flow", async () => {
     const user = await f.user();
     profile.email = ` ${user.email.toUpperCase()} `;
-    expect((await oauth("google")).headers.get("location")).toContain(
-      "/profile/security",
+    expect((await oauth("google")).headers.get("location")).toBe(
+      "/login?error=authentication_failed",
     );
+    expect(await f.db.account.count({ where: { userId: user.id } })).toBe(1);
+    const cookie = responseCookies(
+      await f.send("/sign-in/email", {
+        email: user.email,
+        password: testPassword,
+      }),
+    );
+    expect(
+      (await oauth("google", cookie, true)).headers.get("location"),
+    ).toContain("/profile/security");
     expect(await f.db.user.count({ where: { email: user.email } })).toBe(1);
     expect(await f.db.account.count({ where: { userId: user.id } })).toBe(2);
+  });
+  it("blocks an administrator after real Google callbacks, both before setup and before MFA verification", async () => {
+    const user = await f.user("ADMIN", false);
+    profile.email = user.email;
+    await f.db.account.create({
+      data: {
+        userId: user.id,
+        providerId: "google",
+        accountId: profile.subject,
+      },
+    });
+    let cookie = responseCookies(await oauth("google"));
+    const authorize = () =>
+      requireUser({
+        db: f.db,
+        headers: new Headers({ cookie }),
+        readSession: (headers) => f.auth.api.getSession({ headers }),
+      });
+    await expect(authorize()).rejects.toMatchObject({
+      code: "MFA_SETUP_REQUIRED",
+    });
+    const blocked = await f.send(
+      "/change-password",
+      { currentPassword: testPassword, newPassword: testPassword },
+      cookie,
+    );
+    expect(blocked.status).toBe(403);
+    expect((await blocked.json()).code).toBe("MFA_SETUP_REQUIRED");
+    const session = await f.db.session.findFirstOrThrow({
+      where: { userId: user.id },
+    });
+    const mfa = new MfaService({ db: f.db, env: f.env, mail: async () => {} });
+    const { secret } = await mfa.startTotp(
+      { userId: user.id, sessionId: session.id },
+      {},
+    );
+    await mfa.confirmTotp(
+      { userId: user.id, sessionId: session.id },
+      { code: await generate({ secret }) },
+    );
+    await f.send("/sign-out", {}, cookie);
+    cookie = responseCookies(await oauth("google"));
+    await expect(authorize()).rejects.toMatchObject({ code: "MFA_REQUIRED" });
+    const linking = await f.send(
+      "/link-social",
+      { provider: "microsoft" },
+      cookie,
+    );
+    expect(linking.status).toBe(403);
+    expect((await linking.json()).code).toBe("MFA_REQUIRED");
   });
   it("refuses unverified Google automatic linking", async () => {
     const user = await f.user();

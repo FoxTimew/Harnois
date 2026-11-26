@@ -18,7 +18,10 @@ export function authErrorMessage(code?: string) {
       return "Conservez au moins une méthode de connexion.";
     case "REAUTHENTICATION_REQUIRED":
     case "SESSION_NOT_FRESH":
-      return "Reconnectez-vous pour modifier vos méthodes de connexion.";
+      return "Confirmez votre identité dans la section Double authentification avant de continuer.";
+    case "MFA_SETUP_REQUIRED":
+    case "MFA_REQUIRED":
+      return "Terminez votre double authentification avant de continuer.";
     case "INVALID_TOKEN":
       return "Ce lien a expiré ou a déjà été utilisé. Demandez un nouveau lien.";
     case "USER_ALREADY_EXISTS":

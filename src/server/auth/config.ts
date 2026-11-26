@@ -33,6 +33,7 @@ const protectedPaths = new Set([
   "/link-social",
   "/unlink-account",
   "/list-accounts",
+  "/change-password",
 ]);
 const publicPaths = new Set([
   "/sign-in/email",
@@ -238,19 +239,17 @@ export function createAuth(dependencies: {
             linkCookieName,
             env.BETTER_AUTH_SECRET,
           );
-          if (provider !== "google" || flow) {
-            if (!flow || flow.provider !== provider || flow.id !== user.id)
-              return { error: "AUTHENTICATION_FAILED" };
-            try {
-              const session = await authorize(headers, true);
-              if (
-                session.user.id !== flow.id ||
-                session.session.id !== flow.sessionId
-              )
-                throw new Error();
-            } catch {
-              return { error: "AUTHENTICATION_FAILED" };
-            }
+          if (!flow || flow.provider !== provider || flow.id !== user.id)
+            return { error: "AUTHENTICATION_FAILED" };
+          try {
+            const session = await authorize(headers, true);
+            if (
+              session.user.id !== flow.id ||
+              session.session.id !== flow.sessionId
+            )
+              throw new Error();
+          } catch {
+            return { error: "AUTHENTICATION_FAILED" };
           }
           // Even a purportedly verified Microsoft profile cannot bypass the explicit flow above.
           if (provider === "google" && user.emailVerified !== true)
@@ -287,7 +286,8 @@ export function createAuth(dependencies: {
     session: {
       expiresIn: 7 * 24 * 60 * 60,
       updateAge: 24 * 60 * 60,
-      freshAge: 300,
+      // Native freshness only measures login time. Our before hook enforces recent MFA/primary proof.
+      freshAge: 0,
       cookieCache: { enabled: false },
       additionalFields: {
         mfaVerifiedAt: { type: "date", required: false, input: false },
@@ -330,6 +330,20 @@ export function createAuth(dependencies: {
       before: createAuthMiddleware(async (ctx) => {
         const headers = ctx.headers ?? ctx.request?.headers ?? new Headers();
         try {
+          // Calling get-session here is safe: its exact GET path skips this gate, avoiding recursion.
+          const method = ctx.request?.method ?? ctx.method ?? "GET";
+          const incompleteAllowed =
+            (ctx.path === "/get-session" && method === "GET") ||
+            (ctx.path === "/sign-out" && method === "POST");
+          if (!incompleteAllowed) {
+            const session = await readSession(headers);
+            if (session)
+              await requireUser({
+                headers,
+                db,
+                readSession: async () => session,
+              });
+          }
           if (!publicPaths.has(ctx.path) && !protectedPaths.has(ctx.path))
             throw new APIError("NOT_FOUND", {
               code: "NOT_FOUND",
@@ -391,11 +405,16 @@ export function createAuth(dependencies: {
           if (protectedPaths.has(ctx.path)) {
             const session = await authorize(
               headers,
-              ctx.path === "/link-social" || ctx.path === "/unlink-account",
+              ctx.path !== "/list-accounts",
             );
             if (ctx.path === "/unlink-account")
               return ctx.json(
-                await unlinkAccount(db, session.user.id, ctx.body),
+                await unlinkAccount(
+                  db,
+                  session.user.id,
+                  ctx.body,
+                  session.session.id,
+                ),
               );
             if (ctx.path === "/link-social") {
               const provider = ctx.body?.provider;
@@ -427,6 +446,20 @@ export function createAuth(dependencies: {
         }
       }),
       after: createAuthMiddleware(async (ctx) => {
+        if (
+          ctx.path === "/change-password" &&
+          !isAPIError(ctx.context.returned)
+        ) {
+          // The successful change may have replaced the session cookie and revoked the old session.
+          const session = ctx.context.newSession ?? ctx.context.session;
+          if (session)
+            await writeAudit(db, {
+              action: "PASSWORD_CHANGED",
+              userId: session.user.id,
+              entityType: "User",
+              entityId: session.user.id,
+            });
+        }
         if (ctx.path === "/get-session") {
           const result = ctx.context.returned as {
             user?: { id?: string };

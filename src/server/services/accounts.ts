@@ -3,16 +3,21 @@ import { z } from "zod";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { ServiceError } from "./errors";
 import { writeAudit } from "./audit";
+import { loadMfaContext, assertMfaAccess } from "@/server/auth/mfa-policy";
 
 export async function unlinkAccount(
   db: PrismaClient,
   userId: string,
   input: unknown,
+  sessionId: string,
 ) {
   const { accountId } = z.object({ accountId: z.string().min(1) }).parse(input);
   return db.$transaction(async (tx) => {
     // The native count-then-delete guard alone cannot protect concurrent unlink requests.
     await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+    assertMfaAccess(await loadMfaContext(tx, userId, sessionId), {
+      fresh: true,
+    });
     const user = await tx.user.findUnique({ where: { id: userId } });
     if (!user?.isActive) throw new ServiceError("UNAUTHENTICATED", 401);
     const accounts = await tx.account.findMany({ where: { userId } });

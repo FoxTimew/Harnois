@@ -17,6 +17,7 @@ COPY --chown=node:node package.json prisma.config.ts ./
 COPY --chown=node:node prisma ./prisma
 COPY --chown=node:node tsconfig.json ./
 COPY --chown=node:node scripts/invite-admin.ts ./scripts/invite-admin.ts
+COPY --chown=node:node scripts/reset-mfa.ts ./scripts/reset-mfa.ts
 COPY --from=builder --chown=node:node /app/src ./src
 USER node
 ENTRYPOINT ["node", "node_modules/prisma/build/index.js"]

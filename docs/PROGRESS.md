@@ -97,11 +97,68 @@
   du code et mesure V8 avec témoin positif. Détails et limites dans
   [la vérification des dépendances](DEPENDENCIES-2026-11-24.md).
 - Aucun changement applicatif, de schéma, de migration, de variable ou de workflow.
-  Phase 02 non commencée : reprise uniquement après feu vert du propriétaire,
-  depuis main à jour.
+- [PR #3](https://github.com/FoxTimew/Harnois/pull/3) mergée sur autorisation explicite
+  du propriétaire ; base de la phase 02 : `54b0be078e5fecf4ca18a369be95ca653978f528`.
+  Le diagnostic demandé avant reprise compare les logs des PR #2 et #3 dans
+  [CI-2026-11-26.md](CI-2026-11-26.md). Ralentissement surtout npm, compilation et
+  checkout ; cause précise du runner non vérifiable sans métriques. Serveur inchangé.
+
+### Phase 02
+
+- Branche `feat/02-mfa` depuis main à jour. Couche MFA maison, sans plugin 2FA/passkey
+  Better Auth, sans changement du schéma ni des migrations.
+- Politique relue à chaque requête : rôles obligatoires, mfaEnforced, activation
+  volontaire, facteurs confirmés et état de session. Pages, Server Actions, Route
+  Handlers et hook Better Auth protégés ; 13 routes MFA explicitement autorisées.
+- TOTP chiffré AES-256-GCM versionné et lié à son propriétaire, confirmation,
+  fenêtre ±1 pas et refus du rejeu. WebAuthn multi-clés, challenges liés à la
+  session et à usage unique, origine/RP/signature/compteur vérifiés.
+- Dix codes de secours à 80 bits, empreintes SHA-256 versionnées liées à l'utilisateur,
+  consommation atomique et régénération. Verrous utilisateur, limite commune de
+  cinq échecs, audits sans secrets, notifications après commit.
+- Preuve récente sur les actions sensibles ; Google et Microsoft exigent désormais
+  une liaison explicite. Réinitialisation d'autrui par ADMIN et commande opérateur.
+- 137 tests Vitest verts dans 11 fichiers (96 précédents, 41 supplémentaires),
+  14 tests Playwright verts à 375/1280 px. Résultats détaillés des onze exigences
+  dans [PHASE02-VALIDATION.md](PHASE02-VALIDATION.md). Six captures relues dans
+  `docs/screenshots/phase02/`.
+- Lint, typecheck, tests et build réussis avec les seules quatre variables de CI,
+  sur `harnois_test`. Génération Prisma et migrate deploy réussis, aucune migration ajoutée.
+- Images app/migrate construites sans variables applicatives au build ; démarrage
+  app non root UID 1000 et HTTP 200 avec les quatre variables. Effect, Prisma CLI,
+  @visx, gensync et fichiers .env absents de l'image app.
+- Commande de secours vérifiée en local : EOF et annulation sans mutation, confirmation
+  avec révocation/audit. Commande vérifiée aussi dans l'image migrate ; notification
+  SMTP française HTML/texte reçue dans Mailpit, seul message de test nettoyé.
+- YubiKey physique : enregistrement, déconnexion et reconnexion réussis le 26 novembre
+  sous Chrome/Windows sur localhost:3041, avec intervention du propriétaire dans les
+  fenêtres système. Accès Sécurité observé, dernière utilisation enregistrée et
+  suppression du dernier facteur ADMIN désactivée. Compte jetable nettoyé.
+- Rotation Nginx vérifiée dans un conteneur local : USR1 seul laisse les workers
+  écrire dans l'ancien fichier ; USR1 puis validation et HUP les basculent vers
+  le nouveau. Modèle logrotate exécuté, compression et refus de lecture non root vérifiés.
+- Aucun changement de `.github/workflows/`, des paramètres GitHub ou du serveur.
+  Publication de la PR et contrôle CI suivis dans le rapport de livraison.
 
 ## Décisions
 
+- Phase 02 : otplib 13.6.0, SimpleWebAuthn serveur 14.1.0 / navigateur 14.0.0,
+  qrcode 1.5.4, types qrcode 1.5.6. Les 62 entrées nouvelles/modifiées du verrou
+  sont stables et antérieures au 10 novembre ; aucune nouvelle exception transitive.
+- WebAuthn : residentKey/userVerification preferred, attestation none, aucun
+  attachment imposé ; 20 clés maximum. Compteur nul constant accepté, compteur
+  positif strictement croissant, y compris pour les identifiants synchronisés.
+- Fenêtre récente strictement inférieure à 10 minutes ; preuve primaire seulement
+  sans facteur. freshAge natif Better Auth remplacé par ce contrôle central car
+  l'âge de création d'une session ne mesure pas sa dernière vérification MFA.
+- Désactivation volontaire permise à EMPLOYEE sans obligation ; jamais de suppression
+  du dernier facteur obligatoire. Liaison Google implicite de phase 01 remplacée
+  par une liaison explicite récente, conformément à la validation du propriétaire.
+- Nginx : répertoire root:root 0700, logrotate quotidien, 7 fichiers, compression
+  différée. USR1 puis nginx -t et HUP autorisés par le propriétaire après reproduction
+  du problème de réouverture ; aucun rsyslog ni nouveau service systemd.
+- Tests WebAuthn sur localhost:3041, pas sur une IP littérale ; origine/rpID toujours
+  dérivés de BETTER_AUTH_URL. Aucun nouveau paramètre d'environnement.
 - Correctif Next.js : date limite de résolution `.npmrc` avancée au
   `2026-11-10T00:00:00.000Z`, nécessaire pour les paquets du 9 novembre et
   conforme à la limite de quatorze jours au 24 novembre. Aucun ajout MFA.
@@ -127,8 +184,9 @@
   puis remise à zéro à la connexion réussie. Aucun email clair dans RateLimit.
 - Nginx écrase X-Real-IP ; app liée à 127.0.0.1 par défaut. Proxy distant : IP privée
   et pare-feu obligatoire. Modèle générable sans secrets, aucune recharge automatique.
-- Le modèle Nginx supprime les logs d'erreur de ce virtual host pour éviter les URI
-  à jeton ; logs d'accès limités à date, méthode, statut, taille et catégorie.
+- Le modèle de phase 01 supprimait les logs d'erreur ; la phase 02 les rétablit
+  dans un répertoire réservé à root. Les logs d'accès restent limités à date,
+  méthode, statut, taille et catégorie.
 - Playwright utilise le port 3041, le port 3000 étant utilisé par un autre projet local.
 
 - Node.js 24 ; TypeScript 6.0.3 fonctionne avec Next.js 16.4.2 et typescript-eslint 8.72.0.
@@ -157,6 +215,17 @@
 
 ## Points ouverts
 
+- Test téléphone Android/iPhone par QR WebAuthn/hybrid en HTTPS : à faire après
+  déploiement, sur accord du propriétaire. Une seconde clé physique, NFC, Windows
+  Hello et Touch ID n'ont pas été testés réellement ; authentificateurs virtuels testés.
+- Réenrôlement après changement de domaine documenté, non réalisé sur un staging réel.
+- Les identifiants résidents de la YubiKey ne sont pas effacés par la suppression
+  en base du compte de test ; seul le propriétaire peut nettoyer l'entrée de test
+  dans son gestionnaire de clé, sans réinitialiser la clé entière.
+- Installation effective du modèle Nginx/logrotate et vérification du PID/utilisateur
+  sur le serveur à effectuer par le propriétaire ; aucun accès serveur utilisé.
+- Diagnostic de lenteur VMGIT : ressources/IO, réseau et cache npm à mesurer par
+  le propriétaire ; les logs CI seuls ne permettent pas d'isoler la cause.
 - Vérification réelle Google/Microsoft avec les applications OAuth du propriétaire,
   consentements, tenant organisation et callbacks configurés.
 - Validation réelle du relais SMTP Brevo et de son expéditeur (Mailpit local vérifié).
@@ -185,7 +254,8 @@
 
 - Purge bornée des compteurs RateLimit expirés avec les tâches d'entretien.
 - Phase 11 : remplacer le SMTP direct par une file d'envoi avec reprise des échecs.
-- Phase 02 : 2FA obligatoire selon rôle et politique utilisateur.
+- Rotation des clés de chiffrement et entretien borné des challenges MFA expirés
+  à concevoir dans les phases d'exploitation ; conserver le format versionné.
 - Phases métier : invariants transactionnels décrits dans AGENTS.md.
 - Phase 07 : choix du stockage S3 de production.
 - Phase 12 : PWA et service worker.

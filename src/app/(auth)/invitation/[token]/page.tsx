@@ -1,3 +1,4 @@
+import { guardIncompletePage } from "@/server/auth/require-page-user";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { InvitationForm } from "@/components/auth/invitation-form";
@@ -10,6 +11,7 @@ export default async function InvitationPage({
 }: {
   params: Promise<{ token: string }>;
 }) {
+  await guardIncompletePage();
   const { token } = await params;
   const invitation = await findInvitationByToken(getDb(), token).catch(
     () => null,

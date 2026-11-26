@@ -9,6 +9,7 @@ import {
   signFlowCookie,
 } from "@/server/auth/flow-cookie";
 import { passwordRateKey, privateRateKey } from "@/server/auth/rate-limit";
+import { mfaNamespace } from "@/server/auth/mfa-policy";
 import { getDb } from "@/server/db";
 import { parseServerEnv } from "@/server/env";
 import type { EmailMessage } from "@/server/mail";
@@ -198,6 +199,9 @@ export function authFixture(
         where: {
           OR: [
             { id: { in: ids("RateLimit") } },
+            ...ids("User").map((id) => ({
+              key: { startsWith: mfaNamespace(id) },
+            })),
             { key: { startsWith: `${ip}|` } },
             {
               key: {
