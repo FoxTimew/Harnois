@@ -3,9 +3,16 @@ import nodemailer from "nodemailer";
 import { emailSchema } from "@/lib/validation";
 import { getServerEnv, type ServerEnv } from "@/server/env";
 import { ServiceError } from "@/server/services/errors";
-import { renderEmail, type EmailTemplate } from "./templates";
+import {
+  renderEmail,
+  renderSecurityEmail,
+  type EmailTemplate,
+  type SecurityNotice,
+} from "./templates";
 
-export type EmailMessage = { to: string; template: EmailTemplate; url: string };
+export type EmailMessage = { to: string; url: string } & (
+  { template: EmailTemplate } | { template: "security"; notice: SecurityNotice }
+);
 export type EmailSender = (message: EmailMessage) => Promise<void>;
 
 export function assertMailConfigured(env: ServerEnv) {
@@ -42,7 +49,9 @@ export async function sendEmail(message: EmailMessage, env = getServerEnv()) {
     await transport.sendMail({
       from: { name: env.SMTP_FROM_NAME ?? "Harnois", address: env.SMTP_FROM! },
       to,
-      ...renderEmail(message.template, message.url),
+      ...(message.template === "security"
+        ? renderSecurityEmail(message.notice, message.url)
+        : renderEmail(message.template, message.url)),
     });
   } catch {
     // SMTP errors may contain credentials, addresses or message contents.

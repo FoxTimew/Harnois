@@ -136,14 +136,14 @@ describe("authentication security boundaries", () => {
     );
     await f.db.session.updateMany({
       where: { userId: user.id },
-      data: { createdAt: new Date(Date.now() - 301_000) },
+      data: { createdAt: new Date(Date.now() - 601_000) },
     });
     expect(
       (await f.send("/link-social", { provider: "microsoft" }, cookie)).status,
-    ).toBe(401);
+    ).toBe(403);
     expect(
       (await f.send("/unlink-account", { accountId: "any" }, cookie)).status,
-    ).toBe(401);
+    ).toBe(403);
   });
   it("starts with only four variables and refuses missing SMTP without leaking account existence", async () => {
     const auth = createAuth({ db: f.db, env: f.env });

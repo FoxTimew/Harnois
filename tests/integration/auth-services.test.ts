@@ -14,6 +14,8 @@ import {
 import { consumeRateLimit, privateRateKey } from "@/server/auth/rate-limit";
 import { requireUser } from "@/server/auth/require-user";
 import { prepareInvitation } from "@/server/auth/prepare-invitation";
+import { MfaService } from "@/server/services/mfa";
+import { generate } from "otplib";
 
 let f: AuthFixture;
 beforeEach(() => {
@@ -36,6 +38,19 @@ describe("invitation and account services", () => {
       await expect(
         createInvitation(f.db, user.id, { email: f.email(), role: "ADMIN" }),
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      if (role !== "EMPLOYEE") {
+        const session = await f.db.session.findFirstOrThrow({
+          where: { userId: user.id },
+        });
+        const mfa = new MfaService({
+          db: f.db,
+          env: f.env,
+          mail: async () => {},
+        });
+        const actor = { userId: user.id, sessionId: session.id };
+        const { secret } = await mfa.startTotp(actor, {});
+        await mfa.confirmTotp(actor, { code: await generate({ secret }) });
+      }
       await expect(
         requireUser({
           db: f.db,

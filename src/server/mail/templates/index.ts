@@ -1,4 +1,28 @@
 export type EmailTemplate = "invitation" | "verification" | "password-reset";
+export type SecurityNotice = {
+  event: "factor-added" | "factor-removed" | "recovery-used" | "mfa-reset";
+  at: string;
+  ip: string;
+};
+
+export function renderSecurityEmail(notice: SecurityNotice, url: string) {
+  const event = {
+    "factor-added":
+      "Un facteur de double authentification a été ajouté à votre compte.",
+    "factor-removed":
+      "Un facteur de double authentification a été supprimé de votre compte.",
+    "recovery-used":
+      "Un code de secours a été utilisé pour accéder à votre compte.",
+    "mfa-reset":
+      "Votre double authentification a été réinitialisée. Toutes vos sessions ont été révoquées.",
+  }[notice.event];
+  const details = `${event}\nDate : ${notice.at}\nAdresse IP : ${notice.ip}\nSi vous n’êtes pas à l’origine de cette opération, contactez immédiatement votre administrateur et changez votre mot de passe.\nSécurité de votre compte : ${url}`;
+  return {
+    subject: "Activité de sécurité sur votre compte Harnois",
+    text: `Harnois\n\n${details}`,
+    html: `<!doctype html><html lang="fr"><body style="font-family:Arial,sans-serif;color:#253125;padding:24px"><h1>Activité de sécurité</h1><p>${escapeHtml(event)}</p><p>Date : ${escapeHtml(notice.at)}<br>Adresse IP : ${escapeHtml(notice.ip)}</p><p>Si vous n’êtes pas à l’origine de cette opération, contactez immédiatement votre administrateur et changez votre mot de passe.</p><a href="${escapeHtml(url)}">Sécurité de votre compte Harnois</a></body></html>`,
+  };
+}
 
 const copy = {
   invitation: {
