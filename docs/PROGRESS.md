@@ -204,7 +204,41 @@
 - 36 parcours Playwright réussis (dont 10 nouveaux) ; dix captures finales
   relues à 375 et 1280 px. PR et état CI référencés dans le rapport de livraison.
 
+### Phase 05
+
+- Branche `feat/05-equipment` depuis `main` (`33a6e68`). Premier commit
+  `perf(ci): skip redundant build work` : écriture du cache de build supprimée en
+  CI, double vérification TypeScript supprimée. `typecheck` reste bloquant,
+  vérifié avec une erreur volontaire. Vitest et les workflows restent inchangés.
+- Catégories hiérarchiques et fournisseurs, caractéristiques typées/héritées,
+  parc filtrable, inventaire séquentiel, états et mouvements transactionnels,
+  prêts, retours et pertes, historique personnel et confidentialité financière.
+- Import CSV atomique avec socle partagé employés, export audité, documents PDF,
+  étiquettes L7160 et scan ZXing. Navigation et onglet Matériel activés.
+- Migration `20261127155619_equipment_foundation` appliquée à `harnois_test` ;
+  second `migrate dev` : aucune différence, aucune migration supplémentaire.
+- 686 tests Vitest et 44 parcours Playwright validés ; douze captures relues.
+  Attestation et planche générées par les endpoints de l'image Docker de production
+  sous UID 1000, rendus relus et QR décodé. Données fictives nettoyées ensuite.
+- Résultats détaillés, CSV, PDF et captures dans
+  [PHASE05-VALIDATION.md](PHASE05-VALIDATION.md). État et durée de la CI dans la PR
+  et le rapport de livraison ; aucune modification du serveur.
+
 ## Décisions
+
+- Phase 05 : règles, machine à états, CSV, QR et impression dans
+  [EQUIPMENT.md](EQUIPMENT.md). Prix exclu des réponses TECHNICIAN ; historique
+  EMPLOYEE sans détenteurs suivants. Documents et scan réservés à l'équipe IT.
+- `inventoryNumber` utilise une séquence, allocation sérialisée et saut des tags
+  occupés manuellement. Les trous de séquence sont normaux. Identifiant immuable
+  dans les QR, origine issue de BETTER_AUTH_URL.
+- PDFKit 0.20.2 externalisé avec données et police locale Noto Sans incluses dans
+  le standalone. Les 23 nouvelles entrées du verrou sont stables et antérieures
+  au 10 novembre 2026 ; détail dans DEPENDENCIES_PHASE05.md.
+- Mutualisation du parsing CSV et des justificatifs d'aperçu, sans mélanger les
+  règles métier employés/équipements. Confirmation tout ou rien, même état de base.
+- RETIRED définitif ; récupération de LOST avec note depuis la fiche. Suppression
+  technique limitée aux référentiels inutilisés, jamais aux équipements/historiques.
 
 - Phase 04 : machine à états, confidentialité et règles des référentiels dans
   [EMPLOYEES.md](EMPLOYEES.md), format et limites dans
@@ -302,6 +336,13 @@
 
 ## Points ouverts
 
+- Phase 05 : essais de caméra réels Chrome Android/Safari iOS en HTTPS, et impression
+  L7160 à 100 % sur l'imprimante cible. Les PDF et QR ont été validés numériquement.
+- Déployer l'extension du modèle Nginx aux endpoints d'import équipements ; aucun
+  nouveau logiciel requis. Aucun accès au serveur effectué pour cette phase.
+- Les gains de CI doivent être interprétés avec les variations de charge du
+  runner ; parallélisation des tests abandonnée conformément à l'arbitrage.
+
 - Phase 04 : installation du modèle Nginx d'import et disponibilité de pg_trgm
   dans la base du staging à vérifier par le propriétaire avant déploiement.
   Le module est vérifié localement ; aucune modification du serveur effectuée.
@@ -355,8 +396,11 @@
 
 ## Plus tard
 
-- Phases suivantes : remplir les onglets métier de la fiche employé
-  (équipements, logiciels/licences, comptes, tickets, checklists).
+- Phases suivantes : remplir les onglets métier restants de la fiche employé
+  (logiciels/licences, comptes, tickets, checklists).
+- Phase 07 : photos et pièces jointes des équipements. Si le volume du parc
+  l'exige, paginer les sélecteurs et réduire le périmètre d'invalidation de l'aperçu
+  CSV, en conservant les garanties de concurrence et de confirmation atomique.
 - Si le volume d'employés le justifie, réduire le périmètre de l'empreinte
   d'aperçu et paginer les sélecteurs ; conserver les garanties transactionnelles.
 - Phase 09 : fixer le demandeur du ticket depuis l'employé lié en serveur ;

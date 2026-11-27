@@ -1,6 +1,6 @@
 # Permissions de Harnois
 
-Matrice de phase 03, complétée pour les employés en phase 04. Source exécutable : `src/server/auth/permissions.ts`.
+Matrice de phase 03, complétée pour les employés en phase 04 et le matériel en phase 05. Source exécutable : `src/server/auth/permissions.ts`.
 `can(user, action, resource)` est réservé au serveur ; un utilisateur inactif,
 une action inconnue ou une ressource inconnue sont refusés.
 
@@ -10,6 +10,8 @@ l'identifiant employé vient de la relation en base, jamais de la requête.
 
 | Ressource     | ADMIN          | IT_MANAGER                       | TECHNICIAN     | EMPLOYEE                     |
 | ------------- | -------------- | -------------------------------- | -------------- | ---------------------------- |
+| categories    | R C U A        | R C U A                          | R              | —                            |
+| suppliers     | R C U A        | R C U A                          | R              | —                            |
 | organizations | R C U A        | R C U A                          | R              | —                            |
 | employees     | R C U A        | R C U A                          | R              | R propre                     |
 | equipment     | R C U A        | R C U A                          | R C U A        | R propre                     |
@@ -27,6 +29,17 @@ l'identifiant employé vient de la relation en base, jamais de la requête.
 | audit         | R, export      | R, export métier                 | —              | —                            |
 
 ## Capacités particulières
+
+- `equipment:import` et `equipment:export` : ADMIN / IT_MANAGER.
+- `equipment:documents`, `equipment:labels`, `equipment:scan` : ADMIN / IT_MANAGER / TECHNICIAN.
+- Le prix d'achat est exclu des sélections de lecture et des réponses TECHNICIAN
+  et EMPLOYEE. Son écriture exige `financials:read`.
+- EMPLOYEE : fiche du matériel actuellement attribué, historique propre sans
+  détenteur suivant ni état actuel après restitution. Aucun accès à la liste globale.
+- Catégories/fournisseurs : suppression physique uniquement lorsqu'inutilisés,
+  avec verrou et refus détaillé ; équipement et assignation ne sont jamais supprimés.
+- La matrice indépendante vérifie 272 combinaisons rôle/ressource/action,
+  complétées par les capacités et les cas de propriété.
 
 La ressource `organizations` couvre organisations, pôles et sites. En phase 04,
 la suppression physique concerne uniquement les référentiels sans rattachement ;
@@ -137,10 +150,13 @@ L'option expérimentale Next.js `authInterrupts` n'est pas activée.
 
 ## Couverture
 
-Le test tabulaire indépendant vérifie **240 combinaisons** :
-4 rôles × 15 ressources × 4 actions. Les tests complémentaires portent sur la
+Le test tabulaire indépendant vérifie **272 combinaisons** :
+4 rôles × 17 ressources × 4 actions. Les tests complémentaires portent sur la
 propriété, le destinataire, les rôles invités, les capacités, les utilisateurs
 inactifs et la navigation. Voir `PHASE03-VALIDATION.md` pour les résultats.
 La phase 04 ajoute douze cas pour les capacités import, export et retour en
 arrivée (quatre rôles), ainsi que les refus d'accès et la confidentialité des
 services employés : voir [PHASE04-VALIDATION.md](PHASE04-VALIDATION.md).
+La phase 05 ajoute les catégories et fournisseurs à la matrice et vingt cas
+pour les capacités import, export, documents, étiquettes et scan des équipements :
+voir [PHASE05-VALIDATION.md](PHASE05-VALIDATION.md).
