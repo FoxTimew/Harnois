@@ -2,6 +2,15 @@ import type { AuditAction } from "@/server/services/audit";
 import { roleLabels } from "./auth-messages";
 
 export const auditActionLabels: Record<AuditAction, string> = {
+  REFERENCE_CREATED: "Référentiel créé",
+  REFERENCE_UPDATED: "Référentiel modifié",
+  REFERENCE_DELETED: "Référentiel inutilisé supprimé",
+  EMPLOYEE_CREATED: "Employé créé",
+  EMPLOYEE_UPDATED: "Employé modifié",
+  EMPLOYEE_STATUS_CHANGED: "Statut de l’employé modifié",
+  EMPLOYEE_IMMEDIATE_DEPARTURE: "Départ immédiat",
+  EMPLOYEES_IMPORTED: "Employés importés",
+  EMPLOYEES_EXPORTED: "Employés exportés",
   LOGIN_SUCCEEDED: "Connexion réussie",
   LOGIN_FAILED: "Échec de connexion",
   INVITATION_CREATED: "Invitation créée",
@@ -36,6 +45,10 @@ export const auditActionLabels: Record<AuditAction, string> = {
   ASSIGNMENT_RETURNED: "Matériel restitué",
 };
 export const auditEntityLabels: Record<string, string> = {
+  Employee: "Employé",
+  Organization: "Organisation",
+  Department: "Pôle",
+  Location: "Site",
   User: "Utilisateur",
   Invitation: "Invitation",
   Account: "Compte de connexion",

@@ -41,9 +41,18 @@ const securityActions = [
   "USER_SESSIONS_REVOKED",
   "SESSIONS_REVOKED",
   "AUDIT_EXPORTED",
+  "EMPLOYEES_EXPORTED",
 ] as const;
 // Future domain services must register their actions explicitly. Unknown events are ADMIN-only.
 const businessActions = [
+  "REFERENCE_CREATED",
+  "REFERENCE_UPDATED",
+  "REFERENCE_DELETED",
+  "EMPLOYEE_CREATED",
+  "EMPLOYEE_UPDATED",
+  "EMPLOYEE_STATUS_CHANGED",
+  "EMPLOYEE_IMMEDIATE_DEPARTURE",
+  "EMPLOYEES_IMPORTED",
   "EQUIPMENT_CREATED",
   "EQUIPMENT_UPDATED",
   "EQUIPMENT_ARCHIVED",
@@ -88,6 +97,13 @@ export const sensitiveAuditFields = [
   "userAgent",
   "body",
   "recipient",
+  "phone",
+  "startDate",
+  "endDate",
+  "address",
+  "jobTitle",
+  "searchText",
+  "managerEmail",
 ] as const;
 const normalizedKey = (key: string) =>
   key.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -122,6 +138,94 @@ export function sanitizeAudit(
 const beforeAfter = (schema: z.ZodType) =>
   z.object({ before: schema, after: schema });
 const payloadSchemas: Partial<Record<AuditAction, z.ZodType>> = {
+  REFERENCE_CREATED: z.object({
+    fields: z.array(z.enum(["name", "organizationId", "address", "city"])),
+  }),
+  REFERENCE_UPDATED: z.object({
+    fields: z.array(z.enum(["name", "organizationId", "address", "city"])),
+  }),
+  REFERENCE_DELETED: z.object({ fields: z.array(z.string()).max(0) }),
+  EMPLOYEE_CREATED: z.object({
+    fields: z.array(
+      z.enum([
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "jobTitle",
+        "status",
+        "startDate",
+        "endDate",
+        "organizationId",
+        "departmentId",
+        "locationId",
+        "managerId",
+      ]),
+    ),
+  }),
+  EMPLOYEE_UPDATED: z.object({
+    fields: z.array(
+      z.enum([
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "jobTitle",
+        "status",
+        "startDate",
+        "endDate",
+        "organizationId",
+        "departmentId",
+        "locationId",
+        "managerId",
+      ]),
+    ),
+  }),
+  EMPLOYEE_STATUS_CHANGED: z.object({
+    before: z.enum(["ONBOARDING", "ACTIVE", "OFFBOARDING", "LEFT"]),
+    after: z.enum(["ONBOARDING", "ACTIVE", "OFFBOARDING", "LEFT"]),
+  }),
+  EMPLOYEE_IMMEDIATE_DEPARTURE: z.object({
+    before: z.literal("ACTIVE"),
+    after: z.literal("LEFT"),
+  }),
+  EMPLOYEES_IMPORTED: z.object({
+    created: z.number().int().nonnegative(),
+    updated: z.number().int().nonnegative(),
+    unchanged: z.number().int().nonnegative(),
+    organizations: z.number().int().nonnegative(),
+    departments: z.number().int().nonnegative(),
+  }),
+  EMPLOYEES_EXPORTED: z.object({
+    count: z.number().int().min(0).max(10_000),
+    columns: z.array(
+      z.enum([
+        "email",
+        "prenom",
+        "nom",
+        "poste",
+        "statut",
+        "date_arrivee",
+        "date_depart",
+        "organisation",
+        "pole",
+        "site",
+        "manager_email",
+      ]),
+    ),
+    filters: z.object({
+      searchUsed: z.boolean(),
+      status: z
+        .enum(["ONBOARDING", "ACTIVE", "OFFBOARDING", "LEFT"])
+        .optional(),
+      organizationId: recordId.optional(),
+      departmentId: recordId.optional(),
+      locationId: recordId.optional(),
+      managerId: recordId.optional(),
+      sort: z.enum(["lastName", "firstName", "email", "status", "jobTitle"]),
+      order: z.enum(["asc", "desc"]),
+    }),
+  }),
   USER_ROLE_CHANGED: beforeAfter(z.object({ role: roleSchema })),
   USER_STATUS_CHANGED: beforeAfter(z.object({ isActive: z.boolean() })),
   USER_EMPLOYEE_CHANGED: beforeAfter(
@@ -161,7 +265,11 @@ export function writeAudit(
       | "Mfa"
       | "AuditLog"
       | "Equipment"
-      | "Assignment";
+      | "Assignment"
+      | "Employee"
+      | "Organization"
+      | "Department"
+      | "Location";
     entityId?: string;
     providerId?: string;
     method?: "TOTP" | "WEBAUTHN" | "RECOVERY_CODE" | "PASSWORD";

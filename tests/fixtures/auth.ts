@@ -192,6 +192,15 @@ export function authFixture(
       await original.employee.deleteMany({
         where: { id: { in: ids("Employee") } },
       });
+      await original.department.deleteMany({
+        where: { id: { in: ids("Department") } },
+      });
+      await original.organization.deleteMany({
+        where: { id: { in: ids("Organization") } },
+      });
+      await original.location.deleteMany({
+        where: { id: { in: ids("Location") } },
+      });
       await original.verification.deleteMany({
         where: { id: { in: ids("Verification") } },
       });
