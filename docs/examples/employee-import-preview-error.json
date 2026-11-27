@@ -1,0 +1,49 @@
+{
+  "encoding": "utf-8",
+  "delimiter": ";",
+  "rows": [
+    {
+      "line": 2,
+      "email": "lea@p04-7a1e3b90.invalid",
+      "firstName": "Léa",
+      "lastName": "Morel",
+      "status": "En arrivée",
+      "operation": "create",
+      "errors": [
+        {
+          "field": "site",
+          "message": "Site inconnu : créez-le dans les référentiels avant l’import."
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "email": "amine@p04-7a1e3b90.invalid",
+      "firstName": "Amine",
+      "lastName": "Perrin",
+      "status": "En arrivée",
+      "operation": "create",
+      "errors": [
+        {
+          "field": "statut",
+          "message": "Statut inconnu. Utilisez En arrivée, Actif, En départ ou Parti."
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "email": "elodie@p04-7a1e3b90.invalid",
+      "firstName": "Élodie",
+      "lastName": "Martin",
+      "status": "Actif",
+      "operation": "create",
+      "errors": []
+    }
+  ],
+  "totals": {
+    "created": 3,
+    "updated": 0,
+    "unchanged": 0
+  },
+  "hasErrors": true
+}
