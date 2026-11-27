@@ -8,6 +8,8 @@ import {
 } from "@/lib/validation";
 import { ServiceError } from "./errors";
 import { writeAudit } from "./audit";
+import { assertPermission, can } from "@/server/auth/permissions";
+import { lockUsers, serviceAccess } from "@/server/auth/service-access";
 
 export function invitationTokenHash(token: string) {
   return createHash("sha256")
@@ -16,8 +18,12 @@ export function invitationTokenHash(token: string) {
 }
 async function assertAdmin(tx: Prisma.TransactionClient, id: string) {
   const actor = await tx.user.findUnique({ where: { id } });
-  if (!actor?.isActive || actor.role !== "ADMIN")
+  if (
+    !actor?.isActive ||
+    !can(actor, "read", { type: "invitations", invitationRole: "EMPLOYEE" })
+  )
     throw new ServiceError("FORBIDDEN", 403);
+  return actor;
 }
 async function insertInvitation(
   tx: Prisma.TransactionClient,
@@ -38,8 +44,20 @@ async function insertInvitation(
   }
   const previous = await tx.invitation.findMany({
     where: { email: data.email, acceptedAt: null, revokedAt: null },
-    select: { id: true },
+    select: { id: true, role: true },
   });
+  if (invitedById) {
+    const actor = await assertAdmin(tx, invitedById);
+    assertPermission(actor, "create", {
+      type: "invitations",
+      invitationRole: data.role,
+    });
+    for (const invitation of previous)
+      assertPermission(actor, "archive", {
+        type: "invitations",
+        invitationRole: invitation.role,
+      });
+  }
   for (const invitation of previous) {
     await tx.invitation.update({
       where: { id: invitation.id },
@@ -73,9 +91,12 @@ export async function createInvitation(
   db: PrismaClient,
   actorId: string,
   input: unknown,
+  sessionId?: string,
 ) {
   const data = invitationSchema.parse(input);
   return db.$transaction(async (tx) => {
+    await lockUsers(tx, [actorId]);
+    if (sessionId) await serviceAccess(tx, { userId: actorId, sessionId });
     await assertAdmin(tx, actorId);
     return insertInvitation(tx, data, actorId);
   });
@@ -97,13 +118,20 @@ export async function revokeInvitation(
   db: PrismaClient,
   actorId: string,
   invitationId: string,
+  sessionId?: string,
 ) {
   return db.$transaction(async (tx) => {
-    await assertAdmin(tx, actorId);
+    await lockUsers(tx, [actorId]);
+    if (sessionId) await serviceAccess(tx, { userId: actorId, sessionId });
+    const actor = await assertAdmin(tx, actorId);
     const invitation = await tx.invitation.findUnique({
       where: { id: invitationId },
     });
     if (!invitation) throw new ServiceError("INVITATION_INVALID");
+    assertPermission(actor, "archive", {
+      type: "invitations",
+      invitationRole: invitation.role,
+    });
     if (invitation.revokedAt) return;
     // Also permits recovery of a reservation whose subsequent user creation failed.
     await tx.invitation.update({
@@ -189,9 +217,13 @@ export async function reserveInvitation(
   };
 }
 export async function invitationOverview(db: PrismaClient, actorId: string) {
-  await assertAdmin(db, actorId);
+  const actor = await assertAdmin(db, actorId);
   const [invitations, employees] = await Promise.all([
     db.invitation.findMany({
+      where:
+        actor.role === "ADMIN"
+          ? {}
+          : { role: { in: ["TECHNICIAN", "EMPLOYEE"] } },
       take: 50,
       orderBy: { createdAt: "desc" },
       select: {
@@ -218,6 +250,11 @@ export async function invitationOverview(db: PrismaClient, actorId: string) {
     ).map((user) => user.email),
   );
   return {
+    allowedRoles: (
+      ["ADMIN", "IT_MANAGER", "TECHNICIAN", "EMPLOYEE"] as const
+    ).filter((role) =>
+      can(actor, "create", { type: "invitations", invitationRole: role }),
+    ),
     employees,
     invitations: invitations.map((item) => ({
       id: item.id,

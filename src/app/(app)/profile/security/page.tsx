@@ -6,9 +6,15 @@ import { SecurityMethods } from "@/components/auth/security-methods";
 import { SecurityFactors } from "@/components/mfa/security-factors";
 import { MfaService } from "@/server/services/mfa";
 import { PasswordChange } from "@/components/mfa/password-change";
+import { listSessions } from "@/server/services/sessions";
+import { SessionList } from "@/components/sessions/session-list";
 export default async function SecurityPage() {
   const context = await requirePageUser("/profile/security");
   const accounts = await listAccounts(getDb(), context.user.id);
+  const sessions = await listSessions(getDb(), {
+    userId: context.user.id,
+    sessionId: context.session.id,
+  });
   const status = await new MfaService().status({
     userId: context.user.id,
     sessionId: context.session.id,
@@ -34,6 +40,7 @@ export default async function SecurityPage() {
           />
         </section>
         {status.hasPassword && <PasswordChange />}
+        <SessionList sessions={sessions} />
       </div>
     </section>
   );

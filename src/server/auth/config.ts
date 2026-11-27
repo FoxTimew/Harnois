@@ -28,6 +28,7 @@ import {
 } from "./flow-cookie";
 import { authRateRules, consumeRateLimit, passwordRateKey } from "./rate-limit";
 import { requireUser, type SessionReader } from "./require-user";
+import { lockUsers } from "./service-access";
 
 const protectedPaths = new Set([
   "/link-social",
@@ -291,6 +292,7 @@ export function createAuth(dependencies: {
       cookieCache: { enabled: false },
       additionalFields: {
         mfaVerifiedAt: { type: "date", required: false, input: false },
+        lastSeenAt: { type: "date", required: false, input: false },
         mfaMethod: {
           type: ["TOTP", "WEBAUTHN", "RECOVERY_CODE"],
           required: false,
@@ -353,7 +355,7 @@ export function createAuth(dependencies: {
             ctx.body.email = emailSchema.parse(ctx.body.email);
           const ownedFields =
             ctx.path === "/update-session"
-              ? ["mfaVerifiedAt", "mfaMethod"]
+              ? ["mfaVerifiedAt", "mfaMethod", "lastSeenAt"]
               : [
                   "role",
                   "isActive",
@@ -557,11 +559,25 @@ export function createAuth(dependencies: {
             if (!user?.isActive || !user.emailVerified)
               throw credentialFailure();
             return {
-              data: { ...session, mfaVerifiedAt: null, mfaMethod: null },
+              data: {
+                ...session,
+                mfaVerifiedAt: null,
+                mfaMethod: null,
+                lastSeenAt: new Date(),
+              },
             };
           },
           after: async (session) => {
-            await db.$transaction(async (tx) => {
+            const accepted = await db.$transaction(async (tx) => {
+              // A login can have passed its pre-insert check before deactivation.
+              await lockUsers(tx, [session.userId]);
+              const current = await tx.user.findUnique({
+                where: { id: session.userId },
+              });
+              if (!current?.isActive) {
+                await tx.session.deleteMany({ where: { id: session.id } });
+                return false;
+              }
               const user = await tx.user.update({
                 where: { id: session.userId },
                 data: { lastLoginAt: new Date() },
@@ -575,7 +591,9 @@ export function createAuth(dependencies: {
                 entityType: "User",
                 entityId: session.userId,
               });
+              return true;
             });
+            if (!accepted) throw credentialFailure();
           },
         },
       },

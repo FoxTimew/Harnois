@@ -10,7 +10,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
-  use: { baseURL: "http://localhost:3041", trace: "retain-on-failure" },
+  use: {
+    baseURL: "http://localhost:3041",
+    trace: "retain-on-failure",
+    locale: "fr-FR",
+    timezoneId: "Europe/Paris",
+  },
   projects: [
     {
       name: "mobile",

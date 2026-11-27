@@ -13,13 +13,19 @@ const schema = z.object({
   email: emailSchema,
   confirmed: z.boolean().refine(Boolean),
 });
-export function AdminReset({ initial }: { initial: MfaStatus }) {
+export function AdminReset({
+  initial,
+  targetEmail = "",
+}: {
+  initial: MfaStatus;
+  targetEmail?: string;
+}) {
   const [status, setStatus] = useState(initial);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", confirmed: false },
+    defaultValues: { email: targetEmail, confirmed: false },
   });
   return (
     <div className="space-y-6">
@@ -54,10 +60,11 @@ export function AdminReset({ initial }: { initial: MfaStatus }) {
           id="reset-email"
           type="email"
           autoComplete="off"
+          readOnly={Boolean(targetEmail)}
           {...form.register("email")}
         />
         {form.formState.errors.email && (
-          <p role="alert" className="text-sm text-red-800">
+          <p role="alert" className="text-sm text-danger">
             Renseignez une adresse email valide.
           </p>
         )}
@@ -71,7 +78,7 @@ export function AdminReset({ initial }: { initial: MfaStatus }) {
           facteurs, de ses codes de secours et de toutes ses sessions.
         </label>
         {form.formState.errors.confirmed && (
-          <p role="alert" className="text-sm text-red-800">
+          <p role="alert" className="text-sm text-danger">
             La confirmation est obligatoire.
           </p>
         )}

@@ -2,7 +2,9 @@ import { requirePageUser } from "@/server/auth/require-page-user";
 import { MfaService } from "@/server/services/mfa";
 import { AdminReset } from "@/components/mfa/admin-reset";
 export default async function AdminMfaPage() {
-  const context = await requirePageUser("/admin/mfa", { roles: ["ADMIN"] });
+  const context = await requirePageUser("/admin/mfa", {
+    permission: { action: "users:reset-mfa", resource: "users" },
+  });
   const status = await new MfaService().status({
     userId: context.user.id,
     sessionId: context.session.id,

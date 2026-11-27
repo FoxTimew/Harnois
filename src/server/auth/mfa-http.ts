@@ -4,12 +4,13 @@ import * as schemas from "@/lib/mfa-validation";
 import { requireUser, type SessionReader } from "./require-user";
 import { readJson } from "./read-json";
 import type { MfaAccess } from "./mfa-policy";
+import type { Permission } from "./permissions";
 import { MfaService, MfaError, type MfaActor } from "@/server/services/mfa";
 import { ServiceError } from "@/server/services/errors";
 
 type Endpoint = {
   method: "GET" | "POST";
-  access: MfaAccess;
+  access: MfaAccess & { permission?: Permission };
   schema: z.ZodType;
   invoke: (
     service: MfaService,
@@ -95,7 +96,10 @@ export const mfaEndpoints: Record<string, Endpoint> = {
   },
   "admin/reset": {
     method: "POST",
-    access: { fresh: true, roles: ["ADMIN"] },
+    access: {
+      fresh: true,
+      permission: { action: "users:reset-mfa", resource: "users" },
+    },
     schema: schemas.resetMfaSchema,
     invoke: (s, a, i) => s.resetByAdmin(a, i),
   },
