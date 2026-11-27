@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
       "/api/mfa/:path*",
       "/mfa/:path*",
       "/profile/:path*",
+      "/employees/:path*",
+      "/references/:path*",
+      "/admin/:path*",
+      "/api/employees/:path*",
     ].map((source) => ({
       source,
       headers: [

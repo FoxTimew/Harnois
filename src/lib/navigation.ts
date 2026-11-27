@@ -23,7 +23,7 @@ export const navigation: NavigationItem[] = [
     label: "Employés",
     href: "/employees",
     icon: "people",
-    enabled: false,
+    enabled: true,
     permission: { action: "read", resource: "employees" },
   },
   {

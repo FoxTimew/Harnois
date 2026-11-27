@@ -136,14 +136,15 @@ for (const role of ["ADMIN", "IT_MANAGER", "TECHNICIAN", "EMPLOYEE"] as const) {
     });
     if (role === "ADMIN" || role === "IT_MANAGER")
       await expect(
-        nav.getByRole("link", { name: "Administration" }),
+        nav.getByRole("link", {
+          name: role === "ADMIN" ? "Administration" : "Gestion",
+        }),
       ).toBeVisible();
     else
       await expect(
         nav.getByRole("link", { name: "Administration" }),
       ).toHaveCount(0);
     for (const name of [
-      "Employés",
       "Équipements",
       "Logiciels",
       "Comptes",
@@ -177,7 +178,7 @@ for (const role of ["ADMIN", "IT_MANAGER", "TECHNICIAN", "EMPLOYEE"] as const) {
       ]);
       await expect(
         page
-          .getByRole("navigation", { name: "Administration", exact: true })
+          .getByRole("navigation", { name: "Gestion", exact: true })
           .getByRole("link", { name: "Utilisateurs" }),
       ).toHaveCount(0);
     } else if (role !== "ADMIN") await expect(page).toHaveURL(/\/forbidden$/);

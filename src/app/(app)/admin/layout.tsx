@@ -7,11 +7,11 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const { user } = await requirePageUser();
-  const { admin } = visibleNavigation(user);
+  const { admin, adminLabel } = visibleNavigation(user);
   return (
     <>
       <nav
-        aria-label="Administration"
+        aria-label={adminLabel}
         className="mb-8 flex flex-wrap gap-2 border-b pb-5"
       >
         {admin.map((item) => (

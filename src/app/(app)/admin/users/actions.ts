@@ -16,6 +16,7 @@ export async function updateUserAction(input: unknown): Promise<ActionResult> {
     });
     await mutateUser(getDb(), { userId: user.id, sessionId: session.id }, data);
     revalidatePath("/admin/users");
+    revalidatePath("/employees", "layout");
     revalidatePath(`/admin/users/${data.userId}`);
     return { success: "Modification enregistrée." };
   } catch (error) {

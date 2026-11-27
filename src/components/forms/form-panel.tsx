@@ -31,7 +31,8 @@ export function FormPanel<T extends FieldValues>({
           setMessage("");
           try {
             const result = await onSubmit(data);
-            if (result.error) setMessage(actionMessage(result.error));
+            if (result.error)
+              setMessage(actionMessage(result.error, result.details));
             else {
               toast.success(result.success ?? "Modification enregistrée.");
             }
