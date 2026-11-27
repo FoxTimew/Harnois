@@ -4,7 +4,7 @@ import { z } from "zod";
 export const phoneSchema = z
   .string()
   .trim()
-  .max(60)
+  .max(60, "60 caractères maximum.")
   .transform((value, ctx) => {
     try {
       if (!value.startsWith("+")) throw new Error();

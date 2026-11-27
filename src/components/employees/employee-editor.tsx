@@ -125,7 +125,9 @@ export function EmployeeEditor({
                 />
                 {form.formState.errors[name] && (
                   <span className="mt-1 block text-xs text-danger">
-                    {form.formState.errors[name]?.message}
+                    {name === "email"
+                      ? "Adresse email invalide."
+                      : form.formState.errors[name]?.message}
                   </span>
                 )}
               </label>
@@ -151,6 +153,11 @@ export function EmployeeEditor({
                 type="date"
                 {...form.register("startDate", nullable)}
               />
+              {form.formState.errors.startDate && (
+                <span className="mt-1 block text-xs text-danger">
+                  {form.formState.errors.startDate.message}
+                </span>
+              )}
             </label>
             <label className="block text-sm">
               Date de départ
@@ -159,6 +166,11 @@ export function EmployeeEditor({
                 type="date"
                 {...form.register("endDate", nullable)}
               />
+              {form.formState.errors.endDate && (
+                <span className="mt-1 block text-xs text-danger">
+                  {form.formState.errors.endDate.message}
+                </span>
+              )}
             </label>
             <label className="block text-sm">
               Organisation

@@ -38,11 +38,24 @@ export function parseEmployeeStatus(value: string): EmployeeStatus {
 }
 export const employeeFieldsSchema = z
   .object({
-    firstName: z.string().trim().min(1, "Prénom obligatoire.").max(120),
-    lastName: z.string().trim().min(1, "Nom obligatoire.").max(120),
+    firstName: z
+      .string()
+      .trim()
+      .min(1, "Prénom obligatoire.")
+      .max(120, "120 caractères maximum."),
+    lastName: z
+      .string()
+      .trim()
+      .min(1, "Nom obligatoire.")
+      .max(120, "120 caractères maximum."),
     email: emailSchema,
     phone: phoneSchema.nullable(),
-    jobTitle: z.string().trim().min(1).max(160).nullable(),
+    jobTitle: z
+      .string()
+      .trim()
+      .min(1, "Renseignez un poste ou laissez le champ vide.")
+      .max(160, "160 caractères maximum.")
+      .nullable(),
     status: employeeStatusSchema,
     startDate: dateOnlySchema.nullable(),
     endDate: dateOnlySchema.nullable(),

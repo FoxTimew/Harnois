@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /** Civil dates use UTC midnight for PostgreSQL date, never a browser timezone. */
 export const dateOnlySchema = z.iso
-  .date()
+  .date({ error: "Date de calendrier invalide." })
   .refine((value) => !value.startsWith("0000"), "Année invalide.");
 export function parseCivilDate(value: string): string {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
