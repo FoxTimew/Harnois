@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { formatDate } from "@/lib/format";
 import { mfaRequest, mfaMessage, type MfaStatus } from "@/lib/mfa-client";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/auth/form-message";
@@ -7,7 +8,7 @@ import { Enrollment } from "./enrollment";
 import { RecentVerification } from "./verification";
 import { RecoveryCodes } from "./recovery-codes";
 function date(value: Date | string | null) {
-  return value ? new Date(value).toLocaleDateString("fr-FR") : "Jamais";
+  return value ? formatDate(value, false) : "Jamais";
 }
 export function SecurityFactors({
   initial,
@@ -173,7 +174,7 @@ export function SecurityFactors({
           <h3 className="font-semibold">Codes de secours</h3>
           <p className="text-sm">{status.remaining} code(s) disponible(s).</p>
           {status.remaining <= 3 && (
-            <p role="status" className="text-sm leading-6 text-amber-900">
+            <p role="status" className="text-sm leading-6 text-warning">
               Il vous reste peu de codes. Régénérez-les et conservez-les dans un
               endroit sûr.
             </p>

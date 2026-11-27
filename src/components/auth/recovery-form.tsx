@@ -65,7 +65,7 @@ export function RecoveryForm({
           aria-invalid={Boolean(errors.email)}
         />
         {errors.email && (
-          <p className="text-sm text-red-800">
+          <p className="text-sm text-danger">
             Renseignez une adresse email valide.
           </p>
         )}
@@ -141,7 +141,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           De 12 à 128 caractères.
         </p>
         {errors.password && (
-          <p className="text-sm text-red-800">{errors.password.message}</p>
+          <p className="text-sm text-danger">{errors.password.message}</p>
         )}
       </div>
       <FormMessage>{message}</FormMessage>

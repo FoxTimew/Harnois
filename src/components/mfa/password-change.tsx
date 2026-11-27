@@ -69,7 +69,7 @@ export function PasswordChange() {
           {...form.register("newPassword")}
         />
         {form.formState.errors.newPassword && (
-          <p role="alert" className="text-sm text-red-800">
+          <p role="alert" className="text-sm text-danger">
             Choisissez un mot de passe de 12 à 128 caractères.
           </p>
         )}

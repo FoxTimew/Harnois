@@ -4,7 +4,10 @@ import { invitationOverview } from "@/server/services/invitations";
 import { AdminInvitations } from "@/components/auth/admin-invitations";
 export default async function InvitationsPage() {
   const context = await requirePageUser("/admin/invitations", {
-    roles: ["ADMIN"],
+    permission: {
+      action: "read",
+      resource: { type: "invitations", invitationRole: "EMPLOYEE" },
+    },
   });
   const overview = await invitationOverview(getDb(), context.user.id);
   return (

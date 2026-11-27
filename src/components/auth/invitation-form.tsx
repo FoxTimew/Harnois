@@ -90,7 +90,7 @@ export function InvitationForm({
             aria-invalid={Boolean(errors.name)}
           />
           {errors.name && (
-            <p className="text-sm text-red-800">{errors.name.message}</p>
+            <p className="text-sm text-danger">{errors.name.message}</p>
           )}
         </div>
         <div className="space-y-2">
@@ -109,7 +109,7 @@ export function InvitationForm({
             De 12 à 128 caractères.
           </p>
           {errors.password && (
-            <p className="text-sm text-red-800">{errors.password.message}</p>
+            <p className="text-sm text-danger">{errors.password.message}</p>
           )}
         </div>
         <FormMessage>{message}</FormMessage>

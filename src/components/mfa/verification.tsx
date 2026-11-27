@@ -133,7 +133,7 @@ export function Verification({
             {...form.register("code")}
           />
           {form.formState.errors.code && (
-            <p role="alert" className="text-sm text-red-800">
+            <p role="alert" className="text-sm text-danger">
               {method === "recovery"
                 ? "Saisissez les 16 caractères du code de secours."
                 : "Saisissez les 6 chiffres du code."}

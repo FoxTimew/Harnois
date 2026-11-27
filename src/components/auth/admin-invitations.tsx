@@ -22,9 +22,11 @@ export type InvitationSummary = {
 export function AdminInvitations({
   invitations,
   employees,
+  allowedRoles,
 }: {
   invitations: InvitationSummary[];
   employees: { id: string; firstName: string; lastName: string }[];
+  allowedRoles: (keyof typeof roleLabels)[];
 }) {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
@@ -72,7 +74,7 @@ export function AdminInvitations({
             aria-invalid={Boolean(errors.email)}
           />
           {errors.email && (
-            <p className="text-sm text-red-800">Adresse email invalide.</p>
+            <p className="text-sm text-danger">Adresse email invalide.</p>
           )}
         </div>
         <div className="space-y-2">
@@ -84,11 +86,15 @@ export function AdminInvitations({
             className="h-12 w-full rounded-lg border bg-background px-3 text-sm"
             {...register("role")}
           >
-            {Object.entries(roleLabels).map(([value, label]) => (
-              <option value={value} key={value}>
-                {label}
-              </option>
-            ))}
+            {Object.entries(roleLabels)
+              .filter(([value]) =>
+                allowedRoles.includes(value as keyof typeof roleLabels),
+              )
+              .map(([value, label]) => (
+                <option value={value} key={value}>
+                  {label}
+                </option>
+              ))}
           </select>
         </div>
         <div className="space-y-2">

@@ -73,7 +73,7 @@ export function LoginForm({
             aria-describedby={errors.email ? "email-error" : undefined}
           />
           {errors.email && (
-            <p id="email-error" className="text-sm text-red-800">
+            <p id="email-error" className="text-sm text-danger">
               Renseignez une adresse email valide.
             </p>
           )}
@@ -98,7 +98,7 @@ export function LoginForm({
             aria-invalid={Boolean(errors.password)}
           />
           {errors.password && (
-            <p className="text-sm text-red-800">
+            <p className="text-sm text-danger">
               Renseignez votre mot de passe.
             </p>
           )}

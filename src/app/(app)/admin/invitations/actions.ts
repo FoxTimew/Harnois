@@ -23,9 +23,12 @@ export async function inviteAction(
 ): Promise<{ error?: string }> {
   try {
     const data = invitationSchema.parse(input);
-    const { user } = await requireUser({
+    const { user, session } = await requireUser({
       headers: await headers(),
-      roles: ["ADMIN"],
+      permission: {
+        action: "create",
+        resource: { type: "invitations", invitationRole: data.role },
+      },
     });
     const db = getDb();
     if (
@@ -39,7 +42,12 @@ export async function inviteAction(
       throw new ServiceError("RATE_LIMITED");
     const env = getServerEnv();
     assertMailConfigured(env);
-    const { invitation, token } = await createInvitation(db, user.id, data);
+    const { invitation, token } = await createInvitation(
+      db,
+      user.id,
+      data,
+      session.id,
+    );
     revalidatePath("/admin/invitations");
     await sendEmail({
       to: invitation.email,
@@ -56,11 +64,14 @@ export async function revokeAction(
 ): Promise<{ error?: string }> {
   try {
     const id = z.string().min(1).max(128).parse(input);
-    const { user } = await requireUser({
+    const { user, session } = await requireUser({
       headers: await headers(),
-      roles: ["ADMIN"],
+      permission: {
+        action: "archive",
+        resource: { type: "invitations", invitationRole: "EMPLOYEE" },
+      },
     });
-    await revokeInvitation(getDb(), user.id, id);
+    await revokeInvitation(getDb(), user.id, id, session.id);
     revalidatePath("/admin/invitations");
     return {};
   } catch (error) {

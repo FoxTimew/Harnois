@@ -161,7 +161,7 @@ export function Enrollment({
             {...totp.register("code")}
           />
           {totp.formState.errors.code && (
-            <p className="text-sm text-red-800" role="alert">
+            <p className="text-sm text-danger" role="alert">
               Saisissez les 6 chiffres du code.
             </p>
           )}
@@ -209,7 +209,7 @@ export function Enrollment({
             {...key.register("name")}
           />
           {key.formState.errors.name && (
-            <p role="alert" className="text-sm text-red-800">
+            <p role="alert" className="text-sm text-danger">
               Donnez un nom à cette clé.
             </p>
           )}
