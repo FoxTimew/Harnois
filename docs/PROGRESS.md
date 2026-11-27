@@ -140,7 +140,44 @@
 - Aucun changement de `.github/workflows/`, des paramètres GitHub ou du serveur.
   Publication de la PR et contrôle CI suivis dans le rapport de livraison.
 
+### Phase 03
+
+- [PR #4](https://github.com/FoxTimew/Harnois/pull/4) mergée sur autorisation
+  explicite du propriétaire. Base de phase 03 : `de1c5ea639d82b9d6183e99e83e42b3c4e9de561`.
+- Branche `feat/03-app-foundation`, travail isolé pour préserver la modification
+  locale préexistante de `next-env.d.ts`.
+- Permissions centralisées pour quinze ressources, quatre rôles et capacités
+  particulières. Corrections validées : EMPLOYEE lit sa fiche et peut créer
+  un ticket avec son employé lié ; commentaires déclarés pour ses tickets ;
+  notifications destinataire pour tous, historique global ADMIN seulement.
+- Utilisateurs ADMIN : rôle, statut, lien employé, reset MFA réutilisé,
+  sessions consultables et révocation globale d'autrui avec preuve récente.
+  Transactions verrouillées, interdiction sur soi et protection du dernier ADMIN.
+  La création de session recontrôle aussi l'état actif sous verrou après insertion,
+  pour fermer la course entre connexion et désactivation.
+- `Session.lastSeenAt` nullable ; aucune activité historique inventée.
+  Écriture conditionnelle une fois par minute, sans renouvellement ni audit.
+  Migration `20261127103847_session_last_seen` ; second migrate dev sans dérive.
+- Journal filtré côté serveur, détail nettoyé récursivement et export CSV borné
+  à 10 000 lignes. Chaque export préparé produit un audit sécurité sans contenu.
+  IT_MANAGER ne peut accéder aux événements sécurité, même via détail ou export.
+- Navigation serveur, barre latérale repliable, navigation mobile, trois choix
+  de thème mémorisés ; tableau URL/serveur, cartes mobiles et composants partagés.
+  Page stable `/forbidden` en HTTP 200 final ; API refusée en HTTP 403.
+- Aucun changement de variable, de workflow ou du serveur.
+  Lint, typecheck, 464 tests Vitest et build réussis avec uniquement les quatre
+  variables applicatives de CI. Les 26 tests Playwright couvrent les deux tailles ;
+  24 captures de phase 03 sont conservées. PR et résultat CI suivis dans le rapport
+  de livraison ; la phase n'est pas mergée par l'agent.
+  Résultats détaillés et captures : [PHASE03-VALIDATION.md](PHASE03-VALIDATION.md).
+  Matrice finale : [PERMISSIONS.md](PERMISSIONS.md).
+
 ## Décisions
+
+- Phase 03 : permissions et limites détaillées dans PERMISSIONS.md. Sans modules
+  métier, leurs entrées restent masquées ; pas de lien mort vers un employé.
+  Les notifications sont exclusivement créées par les services ; les exports
+  d'audit sont eux-mêmes des événements de sécurité.
 
 - Phase 02 : otplib 13.6.0, SimpleWebAuthn serveur 14.1.0 / navigateur 14.0.0,
   qrcode 1.5.4, types qrcode 1.5.6. Les 62 entrées nouvelles/modifiées du verrou
@@ -215,6 +252,11 @@
 
 ## Points ouverts
 
+- Phase 03 : parcours validés dans Chromium à 375/1280 px, sans nouvelle
+  vérification sur téléphone physique, Safari, Firefox ou lecteur d'écran.
+  Les alertes de flux interrompu observées dans le serveur Next de développement
+  pendant les navigations automatisées sont documentées dans la validation.
+
 - Test téléphone Android/iPhone par QR WebAuthn/hybrid en HTTPS : à faire après
   déploiement, sur accord du propriétaire. Une seconde clé physique, NFC, Windows
   Hello et Touch ID n'ont pas été testés réellement ; authentificateurs virtuels testés.
@@ -251,6 +293,12 @@
   à jour compatible de l'outillage et de la date limite de résolution npm.
 
 ## Plus tard
+
+- Phase 04 : activer les liens vers les fiches employés quand leurs routes existent.
+- Phase 09 : fixer le demandeur du ticket depuis l'employé lié en serveur ;
+  définir commentaires et réouverture. Les capacités sont seulement déclarées ici.
+- Phase 11 : historique ADMIN des notifications via `notifications:read-all`,
+  création des notifications exclusivement par les services.
 
 - Purge bornée des compteurs RateLimit expirés avec les tâches d'entretien.
 - Phase 11 : remplacer le SMTP direct par une file d'envoi avec reprise des échecs.

@@ -189,6 +189,13 @@ Une configuration partielle Google, Microsoft ou S3 est refusée au démarrage.
 
 ## Dépendances et contribution
 
+Le socle applicatif de phase 03 fournit l'administration des utilisateurs,
+les sessions et le journal d'audit. La [matrice de permissions](docs/PERMISSIONS.md)
+documente les droits serveur et l'activation des futures entrées de navigation.
+La [validation de phase 03](docs/PHASE03-VALIDATION.md) rassemble tests,
+migration et captures. La démonstration `/admin/ui` est réservée à ADMIN et
+reste masquée de la navigation.
+
 Les versions directes sont exactes, le verrou est commité. `.npmrc` fixe la date
 limite de résolution à `2026-11-10T00:00:00Z` pour respecter les 14 jours d'ancienneté.
 Réévaluer cette date lors d'une future mise à jour de dépendances.
