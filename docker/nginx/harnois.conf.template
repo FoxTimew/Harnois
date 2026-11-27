@@ -25,8 +25,8 @@ server {
     error_log /var/log/nginx/harnois/error.log error;
     add_header Referrer-Policy no-referrer always;
     client_max_body_size 1m;
-    # Bounded, memory-only employee CSV uploads. Other actions keep their 1 MiB limit.
-    location ~ ^/api/employees/import/(preview|confirm)$ {
+    # Bounded, memory-only employee/equipment CSV uploads. Other actions keep their 1 MiB limit.
+    location ~ ^/api/(employees|equipment)/import/(preview|confirm)$ {
         client_max_body_size 3m;
         client_body_buffer_size 3m;
         client_body_in_file_only off;

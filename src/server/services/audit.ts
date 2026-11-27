@@ -42,6 +42,9 @@ const securityActions = [
   "SESSIONS_REVOKED",
   "AUDIT_EXPORTED",
   "EMPLOYEES_EXPORTED",
+  "EQUIPMENT_EXPORTED",
+  "EQUIPMENT_DOCUMENT_GENERATED",
+  "EQUIPMENT_LABELS_GENERATED",
 ] as const;
 // Future domain services must register their actions explicitly. Unknown events are ADMIN-only.
 const businessActions = [
@@ -58,6 +61,15 @@ const businessActions = [
   "EQUIPMENT_ARCHIVED",
   "ASSIGNMENT_CREATED",
   "ASSIGNMENT_RETURNED",
+  "ASSIGNMENT_LOST",
+  "LOAN_DATE_CHANGED",
+  "EQUIPMENT_IMPORTED",
+  "CATEGORY_CREATED",
+  "CATEGORY_UPDATED",
+  "CATEGORY_DELETED",
+  "SUPPLIER_CREATED",
+  "SUPPLIER_UPDATED",
+  "SUPPLIER_DELETED",
 ] as const;
 export type AuditAction =
   (typeof securityActions)[number] | (typeof businessActions)[number];
@@ -138,6 +150,84 @@ export function sanitizeAudit(
 const beforeAfter = (schema: z.ZodType) =>
   z.object({ before: schema, after: schema });
 const payloadSchemas: Partial<Record<AuditAction, z.ZodType>> = {
+  ...Object.fromEntries(
+    [
+      "EQUIPMENT_CREATED",
+      "EQUIPMENT_UPDATED",
+      "EQUIPMENT_ARCHIVED",
+      "CATEGORY_CREATED",
+      "CATEGORY_UPDATED",
+      "CATEGORY_DELETED",
+      "SUPPLIER_CREATED",
+      "SUPPLIER_UPDATED",
+      "SUPPLIER_DELETED",
+    ].map((action) => [
+      action,
+      z
+        .object({
+          fields: z.array(z.string().max(40)).max(40),
+          before: z.string().optional(),
+          after: z.string().optional(),
+        })
+        .strict(),
+    ]),
+  ),
+  ASSIGNMENT_CREATED: z
+    .object({
+      equipmentId: recordId,
+      employeeId: recordId,
+      kind: z.enum(["PERMANENT", "LOAN"]),
+    })
+    .strict(),
+  ASSIGNMENT_RETURNED: z
+    .object({
+      equipmentId: recordId,
+      employeeId: recordId,
+      condition: z.string(),
+    })
+    .strict(),
+  ASSIGNMENT_LOST: z
+    .object({ equipmentId: recordId, employeeId: recordId })
+    .strict(),
+  LOAN_DATE_CHANGED: z
+    .object({ equipmentId: recordId, employeeId: recordId })
+    .strict(),
+  EQUIPMENT_IMPORTED: z
+    .object({
+      created: z.number().int(),
+      updated: z.number().int(),
+      unchanged: z.number().int(),
+      categories: z.number().int(),
+      suppliers: z.number().int(),
+    })
+    .strict(),
+  EQUIPMENT_EXPORTED: z
+    .object({
+      count: z.number().int().max(10000),
+      filters: z
+        .object({
+          categoryId: recordId.optional(),
+          supplierId: recordId.optional(),
+          locationId: recordId.optional(),
+          employeeId: recordId.optional(),
+          status: z.string().optional(),
+          warranty: z.string().optional(),
+          departed: z.string().optional(),
+          searchUsed: z.boolean(),
+        })
+        .strict(),
+    })
+    .strict(),
+  EQUIPMENT_DOCUMENT_GENERATED: z
+    .object({
+      kind: z.enum(["handover", "return"]),
+      count: z.number().int().max(100),
+      employeeId: recordId,
+    })
+    .strict(),
+  EQUIPMENT_LABELS_GENERATED: z
+    .object({ count: z.number().int().max(210) })
+    .strict(),
   REFERENCE_CREATED: z.object({
     fields: z.array(z.enum(["name", "organizationId", "address", "city"])),
   }),
@@ -269,7 +359,10 @@ export function writeAudit(
       | "Employee"
       | "Organization"
       | "Department"
-      | "Location";
+      | "Location"
+      | "Category"
+      | "Supplier";
+
     entityId?: string;
     providerId?: string;
     method?: "TOTP" | "WEBAUTHN" | "RECOVERY_CODE" | "PASSWORD";

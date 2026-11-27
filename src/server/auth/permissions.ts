@@ -3,6 +3,8 @@ import type { UserRole } from "@/generated/prisma/client";
 import { ServiceError } from "@/server/services/errors";
 
 export const resources = [
+  "categories",
+  "suppliers",
   "organizations",
   "employees",
   "equipment",
@@ -58,6 +60,14 @@ export function can(
   const owns = Boolean(
     user.employeeId && target.ownerEmployeeId === user.employeeId,
   );
+  if (["equipment:import", "equipment:export"].includes(action))
+    return type === "equipment" && (admin || manager);
+  if (
+    ["equipment:documents", "equipment:labels", "equipment:scan"].includes(
+      action,
+    )
+  )
+    return type === "equipment" && !employee;
   if (["employees:import", "employees:export"].includes(action))
     return type === "employees" && (admin || manager);
   if (action === "employees:restart") return type === "employees" && admin;

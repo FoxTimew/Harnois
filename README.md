@@ -6,6 +6,12 @@ les méthodes Google/Microsoft et les parcours de récupération. La phase 02 aj
 la double authentification TOTP, clés de sécurité et codes de secours, y compris après OAuth.
 Voir [le fonctionnement et le déploiement de l'authentification](docs/AUTHENTICATION.md).
 
+La phase 05 ajoute les équipements, catégories, fournisseurs, assignations et prêts,
+l'import/export CSV, les attestations PDF, les étiquettes QR et « Mon matériel ».
+Voir [les règles et l'utilisation du parc](docs/EQUIPMENT.md).
+Un build local ne vérifie plus les types : exécuter `npm run typecheck` avant tout push,
+en plus de lint, test et build. La configuration Vitest reste séquentielle.
+
 ## Prérequis
 
 - Node.js **24.x** et npm (développement vérifié avec Node 24.13.1, npm 11.8.0).

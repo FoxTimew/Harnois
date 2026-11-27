@@ -1,5 +1,11 @@
 import "server-only";
-import { createHash, randomUUID } from "node:crypto";
+import {
+  digest,
+  createReceipt,
+  readReceipt,
+  validateReceipt,
+  consumeReceipt,
+} from "@/server/imports/receipt";
 import { z } from "zod";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { emailSchema } from "@/lib/validation";
@@ -38,10 +44,6 @@ import {
 import { writeAudit } from "./audit";
 import { ServiceError } from "./errors";
 
-const digest = (value: string | Uint8Array) =>
-  createHash("sha256").update(value).digest("hex");
-const identifier = (actor: Actor) =>
-  `employee-import:${actor.userId}:${actor.sessionId}`;
 export type ImportIssue = { field: string; message: string };
 export type ImportPreviewRow = {
   line: number;
@@ -425,36 +427,15 @@ export async function previewEmployeeImport(
         resource: "employees",
       });
       const plan = await buildImportPlan(tx, bytes, options, user.role);
-      const previewId = randomUUID(),
-        expiresAt = new Date(Date.now() + 15 * 60_000);
-      // Technical receipts only; no names, addresses, file content or normalized row snapshots.
-      const previous = await tx.verification.findMany({
-        where: { identifier: identifier(actor) },
-        select: { id: true },
-        orderBy: { createdAt: "desc" },
-        skip: 19,
-      });
-      if (previous.length)
-        await tx.verification.deleteMany({
-          where: { id: { in: previous.map((row) => row.id) } },
-        });
-      await tx.verification.create({
-        data: {
-          id: previewId,
-          identifier: identifier(actor),
-          expiresAt,
-          value: JSON.stringify({
-            fileHash: plan.fileHash,
-            baseline: plan.baseline,
-            planHash: plan.planHash,
-            options,
-          }),
-        },
+      const receipt = await createReceipt(tx, "employee", actor, {
+        fileHash: plan.fileHash,
+        baseline: plan.baseline,
+        planHash: plan.planHash,
+        options,
       });
       return {
         ...plan.preview,
-        previewId,
-        expiresAt: expiresAt.toISOString(),
+        ...receipt,
         options,
       };
     },
@@ -475,31 +456,16 @@ export async function confirmEmployeeImport(
         action: "employees:import",
         resource: "employees",
       });
-      const receipt = await tx.verification.findFirst({
-        where: {
-          id: data.previewId,
-          identifier: identifier(actor),
-          expiresAt: { gt: new Date() },
-        },
-      });
-      if (!receipt) throw new ServiceError("PREVIEW_EXPIRED", 409);
-      const recorded = JSON.parse(receipt.value) as {
-        fileHash: string;
-        baseline: string;
-        planHash: string;
-        options: unknown;
-      };
-      if (
-        recorded.fileHash !== digest(bytes) ||
-        JSON.stringify(recorded.options) !== JSON.stringify(data.options)
-      )
-        throw new ServiceError("PREVIEW_CHANGED", 409);
+      const recorded = await readReceipt(
+        tx,
+        "employee",
+        actor,
+        data.previewId,
+        bytes,
+        data.options,
+      );
       const plan = await buildImportPlan(tx, bytes, data.options, user.role);
-      if (
-        plan.baseline !== recorded.baseline ||
-        plan.planHash !== recorded.planHash
-      )
-        throw new ServiceError("PREVIEW_CHANGED", 409);
+      validateReceipt(recorded, plan);
       if (plan.preview.hasErrors)
         throw new ServiceError("IMPORT_HAS_ERRORS", 422);
       const approved = new Set(data.approvedReferences);
@@ -538,14 +504,7 @@ export async function confirmEmployeeImport(
         });
       }
       await validateEmployeeChanges(tx, actor, plan.changes, data);
-      const { count } = await tx.verification.deleteMany({
-        where: {
-          id: receipt.id,
-          identifier: identifier(actor),
-          expiresAt: { gt: new Date() },
-        },
-      });
-      if (count !== 1) throw new ServiceError("PREVIEW_EXPIRED", 409);
+      await consumeReceipt(tx, "employee", actor, data.previewId);
       const totals = await persistEmployeeChanges(
         tx,
         actor,

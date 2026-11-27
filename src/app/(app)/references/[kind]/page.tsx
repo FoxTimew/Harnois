@@ -1,11 +1,8 @@
-import Link from "next/link";
+import { ReferenceTabs } from "@/components/references/reference-tabs";
 import { notFound } from "next/navigation";
 import { requirePageUser } from "@/server/auth/require-page-user";
 import { getDb } from "@/server/db";
-import {
-  referenceKindSchema,
-  referenceLabels,
-} from "@/lib/reference-validation";
+import { referenceKindSchema } from "@/lib/reference-validation";
 import { listReferences } from "@/server/services/references";
 import { PageHeading } from "@/components/layout/page-heading";
 import { ReferenceManager } from "@/components/references/reference-manager";
@@ -34,18 +31,7 @@ export default async function ReferencesPage({
         title="Référentiels"
         description="Les organisations, leurs pôles et les lieux de travail de votre équipe."
       />
-      <nav aria-label="Référentiels" className="mb-8 flex flex-wrap gap-2">
-        {Object.entries(referenceLabels).map(([key, label]) => (
-          <Link
-            key={key}
-            href={"/references/" + key}
-            aria-current={key === kind ? "page" : undefined}
-            className={`rounded-xl px-4 py-3 text-sm ${key === kind ? "bg-primary text-primary-foreground" : "border bg-card hover:bg-accent"}`}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
+      <ReferenceTabs current={kind} />
       <ReferenceManager
         kind={kind}
         rows={rows}

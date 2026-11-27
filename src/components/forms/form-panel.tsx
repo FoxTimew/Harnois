@@ -41,18 +41,23 @@ export function FormPanel<T extends FieldValues>({
           }
         })}
       >
-        {children}
-        {message && (
-          <p
-            role="alert"
-            className="rounded-lg bg-danger/10 p-3 text-sm text-danger"
-          >
-            {message}
-          </p>
-        )}
-        <Button disabled={disabled || form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Enregistrement…" : submitLabel}
-        </Button>
+        <fieldset
+          disabled={!form.formState.isReady}
+          className="min-w-0 space-y-5"
+        >
+          {children}
+          {message && (
+            <p
+              role="alert"
+              className="rounded-lg bg-danger/10 p-3 text-sm text-danger"
+            >
+              {message}
+            </p>
+          )}
+          <Button disabled={disabled || form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Enregistrement…" : submitLabel}
+          </Button>
+        </fieldset>
       </form>
     </FormProvider>
   );

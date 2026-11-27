@@ -105,6 +105,9 @@ en français ; code, variables, branches et commits en anglais.
   `fix/<sujet>`, `chore/<sujet>` ; phase 00 : `chore/00-bootstrap`.
 - Conventional Commits en anglais, petits et cohérents.
 - Avant chaque push : lint, typecheck, test et build passent en local.
+- Depuis la phase 05, `next build` et `npm run build` ne vérifient plus les types.
+  Exécuter obligatoirement `npm run typecheck` avant tout push ; cette commande
+  reste inchangée et bloquante en local comme en CI. Un build réussi seul ne suffit pas.
 - PR créée avec `gh pr create`, vers main. Description : résumé, changements du schéma,
   variables ajoutées, comment tester, captures de l'interface.
 - Ne jamais merger une PR : le propriétaire merge.

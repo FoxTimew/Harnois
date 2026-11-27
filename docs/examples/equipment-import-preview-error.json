@@ -1,0 +1,42 @@
+{
+  "encoding": "utf-8",
+  "delimiter": ";",
+  "rows": [
+    {
+      "line": 2,
+      "assetTag": "Attribué à la confirmation",
+      "name": "Écran bureau",
+      "status": "En stock",
+      "operation": "create",
+      "errors": [
+        {
+          "field": "site",
+          "message": "Site inconnu : créez-le dans les référentiels."
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "assetTag": "À générer",
+      "name": "Portable prêt",
+      "status": "En prêt",
+      "operation": "create",
+      "errors": [
+        {
+          "field": "employe_email",
+          "message": "Employé inconnu ou parti."
+        },
+        {
+          "field": "prix_achat",
+          "message": "Montant positif en euros, avec deux décimales maximum."
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "created": 2,
+    "updated": 0,
+    "unchanged": 0
+  },
+  "hasErrors": true
+}

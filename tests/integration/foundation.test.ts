@@ -478,6 +478,7 @@ describe("audit isolation and exports", () => {
     const a = await identity("IT_MANAGER");
     const business = await writeAudit(f.db, {
       action: "EQUIPMENT_UPDATED",
+      changes: { fields: ["status"] },
       userId: a.user.id,
       entityType: "Equipment",
     });

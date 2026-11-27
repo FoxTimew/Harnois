@@ -2,7 +2,7 @@ import "server-only";
 import { getServerEnv } from "@/server/env";
 import { ServiceError } from "@/server/services/errors";
 import { actionMessage } from "@/lib/action-result";
-import { maxEmployeeFileBytes } from "./employee-csv";
+import { maxImportFileBytes } from "./csv";
 export const privateHeaders = {
   "Cache-Control": "private, no-store",
   "Referrer-Policy": "no-referrer",
@@ -60,7 +60,7 @@ export async function readImportBody(request: Request) {
     throw new ServiceError("INVALID_REQUEST");
   const file = form.get("file"),
     metadata = form.get("metadata");
-  if (!(file instanceof File) || !file.size || file.size > maxEmployeeFileBytes)
+  if (!(file instanceof File) || !file.size || file.size > maxImportFileBytes)
     throw new ServiceError("IMPORT_TOO_LARGE", 413);
   if (typeof metadata !== "string" || Buffer.byteLength(metadata) > 64 * 1024)
     throw new ServiceError("INVALID_REQUEST");

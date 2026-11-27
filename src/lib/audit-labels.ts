@@ -2,6 +2,18 @@ import type { AuditAction } from "@/server/services/audit";
 import { roleLabels } from "./auth-messages";
 
 export const auditActionLabels: Record<AuditAction, string> = {
+  EQUIPMENT_EXPORTED: "Équipements exportés",
+  EQUIPMENT_DOCUMENT_GENERATED: "Attestation générée",
+  EQUIPMENT_LABELS_GENERATED: "Étiquettes générées",
+  ASSIGNMENT_LOST: "Perte de matériel déclarée",
+  LOAN_DATE_CHANGED: "Échéance du prêt modifiée",
+  EQUIPMENT_IMPORTED: "Équipements importés",
+  CATEGORY_CREATED: "Catégorie créée",
+  CATEGORY_UPDATED: "Catégorie modifiée",
+  CATEGORY_DELETED: "Catégorie inutilisée supprimée",
+  SUPPLIER_CREATED: "Fournisseur créé",
+  SUPPLIER_UPDATED: "Fournisseur modifié",
+  SUPPLIER_DELETED: "Fournisseur inutilisé supprimé",
   REFERENCE_CREATED: "Référentiel créé",
   REFERENCE_UPDATED: "Référentiel modifié",
   REFERENCE_DELETED: "Référentiel inutilisé supprimé",
@@ -45,6 +57,8 @@ export const auditActionLabels: Record<AuditAction, string> = {
   ASSIGNMENT_RETURNED: "Matériel restitué",
 };
 export const auditEntityLabels: Record<string, string> = {
+  Category: "Catégorie",
+  Supplier: "Fournisseur",
   Employee: "Employé",
   Organization: "Organisation",
   Department: "Pôle",

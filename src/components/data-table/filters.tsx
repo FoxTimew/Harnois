@@ -14,11 +14,13 @@ export function TableFilters({
   query,
   fields,
   search = false,
+  searchPlaceholder = "Nom ou adresse email…",
   sortOptions,
 }: {
   query: Record<string, unknown>;
   fields: FilterField[];
   search?: boolean;
+  searchPlaceholder?: string;
   sortOptions: { value: string; label: string }[];
 }) {
   const router = useRouter();
@@ -56,7 +58,7 @@ export function TableFilters({
               type="search"
               maxLength={100}
               defaultValue={String(query.q ?? "")}
-              placeholder="Nom ou adresse email…"
+              placeholder={searchPlaceholder}
               className="field pl-10"
               onChange={(event) => {
                 const form = event.currentTarget.form;
