@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   devIndicators: false,
+  // CI already runs the blocking typecheck; local builds require it separately.
+  typescript: { ignoreBuildErrors: true },
+  experimental: {
+    turbopackFileSystemCacheForBuild: process.env.CI !== "true",
+  },
   logging: { incomingRequests: false, fetches: { fullUrl: false } },
   async headers() {
     return [
