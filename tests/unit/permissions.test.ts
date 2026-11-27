@@ -215,6 +215,22 @@ it("ticket creation needs a server-linked employee, comments need ownership", ()
     }),
   ).toBe(false);
 });
+it.each(
+  roles.flatMap((role) =>
+    ["employees:import", "employees:export", "employees:restart"].map(
+      (action) => [role, action] as const,
+    ),
+  ),
+)("%s permission for %s", (role, action) => {
+  const expected =
+    action === "employees:restart"
+      ? role === "ADMIN"
+      : role === "ADMIN" || role === "IT_MANAGER";
+  expect(can(user(role), action, "employees")).toBe(expected);
+  expect(can({ ...user(role), isActive: false }, action, "employees")).toBe(
+    false,
+  );
+});
 it("IT_MANAGER invitation permissions depend on the actual invited role", () => {
   for (const invitationRole of roles)
     for (const action of actions)
@@ -233,7 +249,13 @@ it.each(roles)(
   "%s navigation exposes only implemented authorized pages",
   (role) => {
     const nav = visibleNavigation(user(role));
-    expect(nav.main).toEqual([]);
+    expect(nav.main.map((item) => item.id)).toEqual(
+      role === "EMPLOYEE" ? [] : ["employees", "references"],
+    );
+    expect(nav.adminLabel).toBe(
+      role === "ADMIN" ? "Administration" : "Gestion",
+    );
+    expect(nav.personal.some((item) => item.id === "my-employee")).toBe(true);
     expect(nav.admin.map((item) => item.id)).toEqual(
       role === "ADMIN"
         ? ["users", "invitations", "mfa", "audit"]

@@ -76,6 +76,8 @@ volumes contenant des données à conserver. `docker compose stop` conserve les 
 - `npm run db:migrate` : synchronise la base de développement et génère le client.
   Pour créer une migration nommée, utiliser la commande explicite ci-dessous.
 - `npm run db:seed` : données de démonstration idempotentes ; ne crée aucun utilisateur.
+- `npm run db:seed:demo -- --confirm-demo` : 50 employés fictifs, uniquement avec
+  `HARNOIS_ALLOW_DEMO_SEED=true` et une base conforme au manifeste ; jamais en production.
 - `npm run db:test:migrate` : applique les migrations uniquement à la base de test configurée.
 - `npm run auth:invite-admin -- --email admin@example.org` : invite le premier ADMIN,
   affiche le lien confidentiel et refuse si un administrateur existe déjà.
@@ -113,6 +115,8 @@ DATABASE_URL héritée du terminal. Ils refusent toute base ne s'appelant pas
 Les tests du socle annulent leurs transactions. Les parcours Better Auth utilisent
 de vraies transactions et nettoient uniquement les enregistrements qu'ils créent,
 même en cas d'échec. Playwright réserve le port 3041 et utilise la même base de test.
+Exécuter Vitest et Playwright successivement, jamais en parallèle sur cette base :
+le test du seed vérifie volontairement l'absence d'autres employés.
 
 Les tests couvrent la normalisation des emails, EUR, la configuration du serveur,
 le seed idempotent et l'effet réel des quatre contraintes partielles. Playwright
@@ -188,6 +192,14 @@ restent facultatifs tant que les fonctionnalités concernées ne sont pas prése
 Une configuration partielle Google, Microsoft ou S3 est refusée au démarrage.
 
 ## Dépendances et contribution
+
+La phase 04 ajoute les [employés et référentiels](docs/EMPLOYEES.md), leur
+[import/export CSV](docs/EMPLOYEE-IMPORT.md), la recherche sans accents et le
+seed fictif protégé. La migration requiert le module PostgreSQL `pg_trgm`
+(présent dans l'image PostgreSQL du dépôt), et les endpoints d'import ont une
+configuration Nginx dédiée à installer par le propriétaire.
+Le [rapport de validation de phase 04](docs/PHASE04-VALIDATION.md) rassemble
+les tests, la migration, le modèle CSV et les captures.
 
 Le socle applicatif de phase 03 fournit l'administration des utilisateurs,
 les sessions et le journal d'audit. La [matrice de permissions](docs/PERMISSIONS.md)

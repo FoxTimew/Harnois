@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -137,8 +138,15 @@ export function UserEditor({
               </select>
             </label>
             <p className="text-xs leading-5 text-muted-foreground">
-              Le lien associe les données personnelles à ce compte. La fiche
-              détaillée sera disponible avec le module Employés.
+              Le lien associe la fiche professionnelle à ce compte.
+              {target.employeeId && (
+                <Link
+                  className="ml-1 underline"
+                  href={"/employees/" + target.employeeId}
+                >
+                  Ouvrir la fiche employé
+                </Link>
+              )}
             </p>
           </FormPanel>
         </section>

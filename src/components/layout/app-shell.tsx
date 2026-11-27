@@ -29,7 +29,7 @@ import {
   Laptop,
   Settings2,
 } from "lucide-react";
-import { personalNavigation, type NavigationLink } from "@/lib/navigation";
+import type { NavigationLink } from "@/lib/navigation";
 import { authClient } from "@/lib/auth-client";
 import { roleLabels } from "@/lib/auth-messages";
 import { Button } from "@/components/ui/button";
@@ -54,11 +54,15 @@ export function AppShell({
   children,
   main,
   admin,
+  adminLabel,
+  personal: personalNavigation,
   user,
 }: {
   children: React.ReactNode;
   main: NavigationLink[];
   admin: NavigationLink[];
+  adminLabel: string;
+  personal: NavigationLink[];
   user: { name: string; role: keyof typeof roleLabels };
 }) {
   const path = usePathname();
@@ -73,7 +77,7 @@ export function AppShell({
     ? [
         {
           id: "admin",
-          label: "Administration",
+          label: adminLabel,
           href: admin[0].href,
           icon: "admin",
         },

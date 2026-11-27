@@ -4,7 +4,9 @@ import { getSessionCookie } from "better-auth/cookies";
 export function proxy(request: NextRequest) {
   // Presence only. Each protected page, action and handler still calls requireUser().
   if (
-    /^\/(profile|admin|mfa)(\/|$)/.test(request.nextUrl.pathname) &&
+    /^\/(profile|admin|mfa|employees|references)(\/|$)/.test(
+      request.nextUrl.pathname,
+    ) &&
     !getSessionCookie(request)
   )
     return NextResponse.redirect(new URL("/login", request.url));

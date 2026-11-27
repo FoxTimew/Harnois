@@ -51,6 +51,10 @@ const serverEnvSchema = z
       .optional()
       .transform((v) => v === "true"),
     APP_BIND_ADDRESS: optionalString,
+    HARNOIS_ALLOW_DEMO_SEED: z
+      .enum(["true", "false", ""])
+      .optional()
+      .transform((value) => value === "true"),
     S3_ENDPOINT: optionalUrl,
     S3_REGION: optionalString,
     S3_BUCKET: z.preprocess(

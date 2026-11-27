@@ -172,7 +172,57 @@
   Résultats détaillés et captures : [PHASE03-VALIDATION.md](PHASE03-VALIDATION.md).
   Matrice finale : [PERMISSIONS.md](PERMISSIONS.md).
 
+### Phase 04
+
+- Base : `main` au commit `fa6f52f507137a3fe7b853b8f39505b1a2f5a752`,
+  après merge de la PR #5 ; branche `feat/04-employees`.
+- Référentiels organisations/pôles/sites, suppression sous verrou uniquement
+  sans rattachement, contrôle des versions et messages avec compteurs.
+- Employés : liste filtrée/triée, fiches, édition, états français, hiérarchie
+  vérifiée sans limite de profondeur, départ immédiat avec confirmation,
+  désactivation atomique ADMIN et bandeau des comptes actifs de personnes parties.
+- Invitations préremplies, liaison de compte existant ADMIN avec preuve récente,
+  lien Ma fiche, navigation Référentiels et Gestion pour IT_MANAGER.
+- Confidentialité TECHNICIAN : téléphone/dates exclus de la requête SQL et
+  des réponses. EMPLOYEE : uniquement sa fiche liée, sans liste ni export.
+- Import CSV en mémoire : UTF-8/Windows-1252, aperçu, approbation des référentiels,
+  justificatif lié à la session, revalidation, transaction tout ou rien et audit
+  sans valeurs personnelles. Export filtré sans téléphone, plafonné à 10 000.
+- Migration `20261127132955_employee_search_text` : backfill puis champ obligatoire,
+  index GIN pg_trgm autorisé par le propriétaire. Second migrate dev :
+  `Already in sync, no schema change or pending migration was found.`
+  Quatre index partiels initiaux conservés ; aucune autre modification du schéma.
+- Seed fictif de 50 employés, idempotent, manifeste d'identités et double
+  confirmation : `HARNOIS_ALLOW_DEMO_SEED=true` et `--confirm-demo`.
+- Modèle Nginx bornant les imports à 3 Mio (CSV limité à 2 Mio) sans
+  fichier temporaire ; test local des tailles et du transfert chunked.
+- Tests, résultats et dix captures à 375/1280 px :
+  [rapport de validation](PHASE04-VALIDATION.md).
+- Contrôles locaux avec les quatre variables applicatives de CI : lint,
+  typecheck, 594 tests Vitest et build réussis. Images app/migrate construites ;
+  serveur standalone HTTP 200 sous UID 1000, protections CLI du seed vérifiées.
+- 36 parcours Playwright réussis (dont 10 nouveaux) ; dix captures finales
+  relues à 375 et 1280 px. PR et état CI référencés dans le rapport de livraison.
+
 ## Décisions
+
+- Phase 04 : machine à états, confidentialité et règles des référentiels dans
+  [EMPLOYEES.md](EMPLOYEES.md), format et limites dans
+  [EMPLOYEE-IMPORT.md](EMPLOYEE-IMPORT.md).
+- Recherche : normalisation Unicode dans le service, jamais dans le navigateur ;
+  pg_trgm sert seulement à l'index de recherche par contenu, sans unaccent.
+- Verrou commun aux mutations d'employés, référentiels, imports, seed et
+  liaisons de comptes ; ordre compatible avec le verrou du dernier ADMIN.
+- Aperçu conservateur : toute modification des employés/référentiels ou des
+  comptes liés pris en compte demande un nouvel aperçu. Aucun contenu CSV stocké
+  dans Verification ; preuves techniques bornées à vingt par session.
+- CSV : libellés français, cellules vides conservées en modification, `__CLEAR__`
+  pour effacer un champ facultatif ; sites inconnus refusés. Départ immédiat
+  également possible dans un import, avec confirmation.
+- csv-parse 7.0.3 (25 septembre 2026), libphonenumber-js 1.13.15
+  (8 octobre 2026), sans dépendance transitive ajoutée ; date limite npm inchangée.
+- Les trois petits référentiels partagent un service et un écran paramétré :
+  mêmes verrous, droits et audits, avec champs/comptages propres à chaque type.
 
 - Phase 03 : permissions et limites détaillées dans PERMISSIONS.md. Sans modules
   métier, leurs entrées restent masquées ; pas de lien mort vers un employé.
@@ -252,6 +302,17 @@
 
 ## Points ouverts
 
+- Phase 04 : installation du modèle Nginx d'import et disponibilité de pg_trgm
+  dans la base du staging à vérifier par le propriétaire avant déploiement.
+  Le module est vérifié localement ; aucune modification du serveur effectuée.
+- Nouveau seed de démonstration désactivé par défaut : le propriétaire doit
+  définir la variable uniquement en local/staging, jamais en production.
+- Import Excel validé avec des octets Windows-1252 et dates françaises ;
+  aucun export effectué depuis une installation réelle de Microsoft Excel.
+- Phase 04 : Chromium à 375/1280 px ; pas de nouvelle vérification physique
+  Android/iPhone, Safari/Firefox, lecteur d'écran, ni charge multi-utilisateur
+  à grande échelle. Validation Nginx locale, pas du virtual host HTTPS réel.
+
 - Phase 03 : parcours validés dans Chromium à 375/1280 px, sans nouvelle
   vérification sur téléphone physique, Safari, Firefox ou lecteur d'écran.
   Les alertes de flux interrompu observées dans le serveur Next de développement
@@ -294,7 +355,10 @@
 
 ## Plus tard
 
-- Phase 04 : activer les liens vers les fiches employés quand leurs routes existent.
+- Phases suivantes : remplir les onglets métier de la fiche employé
+  (équipements, logiciels/licences, comptes, tickets, checklists).
+- Si le volume d'employés le justifie, réduire le périmètre de l'empreinte
+  d'aperçu et paginer les sélecteurs ; conserver les garanties transactionnelles.
 - Phase 09 : fixer le demandeur du ticket depuis l'employé lié en serveur ;
   définir commentaires et réouverture. Les capacités sont seulement déclarées ici.
 - Phase 11 : historique ADMIN des notifications via `notifications:read-all`,

@@ -23,10 +23,12 @@ export function AdminInvitations({
   invitations,
   employees,
   allowedRoles,
+  prefill,
 }: {
   invitations: InvitationSummary[];
   employees: { id: string; firstName: string; lastName: string }[];
   allowedRoles: (keyof typeof roleLabels)[];
+  prefill?: { email: string; employeeId: string };
 }) {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
@@ -38,7 +40,7 @@ export function AdminInvitations({
     formState: { errors, isSubmitting },
   } = useForm<z.infer<typeof invitationSchema>>({
     resolver: zodResolver(invitationSchema),
-    defaultValues: { role: "EMPLOYEE" },
+    defaultValues: { role: "EMPLOYEE", ...prefill },
   });
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">

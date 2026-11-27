@@ -65,6 +65,7 @@ services:
       target: migrate
     profiles: ["tools"]
     environment:
+      HARNOIS_ALLOW_DEMO_SEED: ${HARNOIS_ALLOW_DEMO_SEED:-false}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL required}

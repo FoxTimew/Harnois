@@ -58,6 +58,9 @@ export function can(
   const owns = Boolean(
     user.employeeId && target.ownerEmployeeId === user.employeeId,
   );
+  if (["employees:import", "employees:export"].includes(action))
+    return type === "employees" && (admin || manager);
+  if (action === "employees:restart") return type === "employees" && admin;
   if (action === "financials:read")
     return type === "financials" && (admin || manager);
   if (action === "licenses:reveal-key")

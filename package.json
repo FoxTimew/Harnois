@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate dev && prisma generate",
     "db:seed": "node --conditions=react-server --import tsx prisma/seed.ts",
+    "db:seed:demo": "node --conditions=react-server --import tsx prisma/seed-employees-demo.ts",
     "db:test:migrate": "node scripts/test-database.mjs",
     "auth:invite-admin": "node --conditions=react-server --import tsx scripts/invite-admin.ts",
     "auth:reset-mfa": "node --conditions=react-server --import tsx scripts/reset-mfa.ts"
@@ -37,7 +38,9 @@
     "better-auth": "1.7.15",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
+    "csv-parse": "7.0.3",
     "dotenv": "18.0.8",
+    "libphonenumber-js": "1.13.15",
     "lucide-react": "1.61.0",
     "next": "16.4.6",
     "next-themes": "0.4.6",

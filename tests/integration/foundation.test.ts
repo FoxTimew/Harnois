@@ -1,3 +1,4 @@
+import { employeeFixtureFields } from "../fixtures/employees";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -377,7 +378,7 @@ describe("administration and session transactions", () => {
     const a = await identity();
     const b = await identity("EMPLOYEE");
     const employee = await f.db.employee.create({
-      data: { firstName: "Test", lastName: "Fixture", email: f.email() },
+      data: employeeFixtureFields(f.email()),
     });
     const results = await Promise.allSettled(
       [a.user.id, b.user.id].map((userId) =>
