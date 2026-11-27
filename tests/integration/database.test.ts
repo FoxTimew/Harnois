@@ -1,3 +1,4 @@
+import { employeeFixtureFields } from "../fixtures/employees";
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import type { Prisma } from "@/generated/prisma/client";
@@ -86,9 +87,7 @@ describe("PostgreSQL integration", () => {
       const id = randomUUID();
       const employee = await tx.employee.create({
         data: {
-          firstName: "Test",
-          lastName: "Fixture",
-          email: `${id}@example.invalid`,
+          ...employeeFixtureFields(`${id}@example.invalid`),
         },
       });
       const category = await tx.category.create({ data: { name: id } });
@@ -111,9 +110,7 @@ describe("PostgreSQL integration", () => {
       const id = randomUUID();
       const employee = await tx.employee.create({
         data: {
-          firstName: "Test",
-          lastName: "Fixture",
-          email: `${id}@example.invalid`,
+          ...employeeFixtureFields(`${id}@example.invalid`),
         },
       });
       const software = await tx.software.create({ data: { name: id } });
@@ -137,9 +134,7 @@ describe("PostgreSQL integration", () => {
       const id = randomUUID();
       const employee = await tx.employee.create({
         data: {
-          firstName: "Test",
-          lastName: "Fixture",
-          email: `${id}@example.invalid`,
+          ...employeeFixtureFields(`${id}@example.invalid`),
         },
       });
       const software = await tx.software.create({ data: { name: id } });

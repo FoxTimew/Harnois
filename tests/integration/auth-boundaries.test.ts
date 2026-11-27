@@ -1,3 +1,4 @@
+import { employeeFixtureFields } from "../fixtures/employees";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   authFixture,
@@ -55,7 +56,7 @@ describe("authentication security boundaries", () => {
   });
   it("applies the invited employee at user creation", async () => {
     const employee = await f.db.employee.create({
-      data: { firstName: "Test", lastName: "Test", email: f.email() },
+      data: employeeFixtureFields(f.email(), "Test"),
     });
     const { invitation, cookie } = await f.invitation({
       employeeId: employee.id,

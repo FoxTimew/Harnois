@@ -1,3 +1,4 @@
+import { employeeFixtureFields } from "../fixtures/employees";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   authFixture,
@@ -103,7 +104,7 @@ describe("invitation and account services", () => {
   });
   it("applies the employee and rejects an already-linked employee before reservation", async () => {
     const employee = await f.db.employee.create({
-      data: { firstName: "Test", lastName: "Test", email: f.email() },
+      data: employeeFixtureFields(f.email(), "Test"),
     });
     const { invitation } = await f.invitation({ employeeId: employee.id });
     const user = await f.user();
