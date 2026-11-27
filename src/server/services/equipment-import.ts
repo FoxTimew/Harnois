@@ -305,7 +305,9 @@ async function buildPlan(
       if (
         fields.status === "LOANED" &&
         (!expectedReturnDate ||
-          (!active && expectedReturnDate < todayInParis()))
+          (expectedReturnDate < todayInParis() &&
+            (!active ||
+              dateOnly(active.expectedReturnDate) !== expectedReturnDate)))
       )
         fail(
           "retour_prevu",

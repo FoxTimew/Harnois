@@ -192,6 +192,21 @@ describe("equipment transactional boundaries", () => {
     expect(csv).toContain(e.email);
     expect(csv).toContain("2099-01-01");
     expect(csv).toContain("En prêt");
+    const invalid = await previewEquipmentImport(
+      f.db,
+      a.actor,
+      Buffer.from(
+        "numero_inventaire;designation;categorie;retour_prevu\n" +
+          item.assetTag +
+          ";;;2020-01-01",
+      ),
+    );
+    expect(invalid.hasErrors).toBe(true);
+    expect(invalid.rows[0].errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "retour_prevu" }),
+      ]),
+    );
     const audit = await f.db.auditLog.findFirstOrThrow({
       where: { userId: a.user.id, action: "EQUIPMENT_EXPORTED" },
     });
