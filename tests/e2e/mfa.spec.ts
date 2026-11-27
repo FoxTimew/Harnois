@@ -106,11 +106,16 @@ test("forced WebAuthn setup, login verification, second key and removal", async 
   await expect(
     page.getByRole("heading", { name: "Conservez vos codes de secours" }),
   ).toBeVisible();
-  await expect(page.locator("li")).toHaveCount(10);
+  await expect(
+    page
+      .getByRole("region", { name: "Conservez vos codes de secours" })
+      .getByRole("listitem"),
+  ).toHaveCount(10);
   await page.getByLabel("J’ai conservé mes codes de secours.").check();
   await page.getByRole("button", { name: "Continuer", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/invitations$/);
-  await page.getByRole("button", { name: "Déconnexion" }).click();
+  await page.getByRole("button", { name: "Menu utilisateur" }).click();
+  await page.getByRole("menuitem", { name: "Déconnexion" }).click();
   await login(page);
   await expect(page).toHaveURL(/\/mfa\/verify/);
   await expect(
@@ -200,8 +205,15 @@ test("TOTP setup, recovery login, low-code warning and regeneration", async ({
     .getByLabel("Code à 6 chiffres")
     .fill(await generate({ secret: secret! }));
   await page.getByRole("button", { name: "Activer l’application" }).click();
-  await expect(page.locator("li")).toHaveCount(10);
-  const codes = await page.locator("li").allTextContents();
+  await expect(
+    page
+      .getByRole("region", { name: "Conservez vos codes de secours" })
+      .getByRole("listitem"),
+  ).toHaveCount(10);
+  const codes = await page
+    .getByRole("region", { name: "Conservez vos codes de secours" })
+    .getByRole("listitem")
+    .allTextContents();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Télécharger" }).click();
   expect((await download).suggestedFilename()).toBe(
@@ -214,7 +226,8 @@ test("TOTP setup, recovery login, low-code warning and regeneration", async ({
   await expect(
     page.getByRole("heading", { name: "Conservez vos codes de secours" }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Déconnexion" }).click();
+  await page.getByRole("button", { name: "Menu utilisateur" }).click();
+  await page.getByRole("menuitem", { name: "Déconnexion" }).click();
   await login(page);
   await expect(page).toHaveURL(/\/mfa\/verify/);
   await page
@@ -239,7 +252,11 @@ test("TOTP setup, recovery login, low-code warning and regeneration", async ({
   await expect(page.getByText(/Il vous reste peu de codes/)).toBeVisible();
   await page.getByRole("button", { name: "Régénérer les codes" }).click();
   await page.getByRole("button", { name: "Confirmer", exact: true }).click();
-  await expect(page.locator("li")).toHaveCount(10);
+  await expect(
+    page
+      .getByRole("region", { name: "Conservez vos codes de secours" })
+      .getByRole("listitem"),
+  ).toHaveCount(10);
   const oldCode = await page.request.post("/api/mfa/recovery/verify", {
     data: { code: codes[9] },
     headers: { origin: "http://localhost:3041" },

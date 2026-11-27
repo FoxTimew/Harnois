@@ -99,7 +99,8 @@ test("invitation, login, security and logout work without overflow", async ({
     path: info.outputPath(`security-${info.project.name}.png`),
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Déconnexion" }).click();
+  await page.getByRole("button", { name: "Menu utilisateur" }).click();
+  await page.getByRole("menuitem", { name: "Déconnexion" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto("/profile/security");
   await expect(page).toHaveURL(/\/login$/);
@@ -138,7 +139,14 @@ test("admin invitation form is protected by role and displays delivery failures"
   const { recoveryCodes } = await confirmation.json();
   await page.goto("/profile/security");
   await expect(page).toHaveURL(/\/profile\/security$/);
-  await page.getByRole("link", { name: "Invitations", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Administration", exact: true })
+    .filter({ visible: true })
+    .click();
+  await page
+    .getByRole("navigation", { name: "Administration", exact: true })
+    .getByRole("link", { name: "Invitations", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Inviter une personne" }),
   ).toBeVisible();
@@ -183,7 +191,7 @@ test("admin invitation form is protected by role and displays delivery failures"
     page.getByText("Vous n’avez pas les droits nécessaires."),
   ).toBeVisible();
   await page.reload();
-  await expect(page).toHaveURL(/\/profile\/security$/);
+  await expect(page).toHaveURL(/\/forbidden$/);
 });
 test("public recovery pages work and invalid invitations remain neutral", async ({
   page,
