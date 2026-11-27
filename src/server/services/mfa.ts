@@ -1,4 +1,5 @@
 import "server-only";
+import { assertPermission } from "@/server/auth/permissions";
 import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import { generateSecret, generateURI, verify as verifyTotp } from "otplib";
@@ -837,7 +838,8 @@ export class MfaService {
         actor.sessionId,
         this.clock(),
       );
-      assertMfaAccess(context, { roles: ["ADMIN"], fresh: true });
+      assertMfaAccess(context, { fresh: true });
+      assertPermission(context.user, "users:reset-mfa", "users");
       await this.reset(tx, target.id, actor.userId);
       return {
         userId: target.id,

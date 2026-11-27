@@ -5,9 +5,10 @@ import { safeReturnUrl } from "@/lib/return-url";
 import { ServiceError } from "@/server/services/errors";
 import { requireUser } from "./require-user";
 import type { MfaAccess } from "./mfa-policy";
+import type { Permission } from "./permissions";
 export async function requirePageUser(
   returnTo?: string,
-  access: MfaAccess = {},
+  access: MfaAccess & { permission?: Permission } = {},
 ) {
   const requestHeaders = await headers();
   const next = safeReturnUrl(returnTo ?? requestHeaders.get("x-harnois-path"));
@@ -19,7 +20,7 @@ export async function requirePageUser(
         redirect(`/mfa/setup?returnTo=${encodeURIComponent(next)}`);
       if (error.code === "MFA_REQUIRED")
         redirect(`/mfa/verify?returnTo=${encodeURIComponent(next)}`);
-      if (error.code === "FORBIDDEN") redirect("/profile/security");
+      if (error.code === "FORBIDDEN") redirect("/forbidden");
       if (error.code === "UNAUTHENTICATED") redirect("/login");
     }
     throw error;

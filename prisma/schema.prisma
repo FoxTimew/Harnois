@@ -196,6 +196,7 @@ model Session {
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   mfaVerifiedAt DateTime? // NULL = 2e facteur pas encore validé pour cette session
   mfaMethod     MfaMethod?
+  lastSeenAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
