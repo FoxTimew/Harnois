@@ -19,14 +19,8 @@ export const employeeStatusLabels: Record<EmployeeStatus, string> = {
   OFFBOARDING: "En départ",
   LEFT: "Parti",
 };
-export function normalizeSearch(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/gu, " ");
-}
+export { normalizeSearch } from "./search-text";
+import { normalizeSearch } from "./search-text";
 export function parseEmployeeStatus(value: string): EmployeeStatus {
   const normalized = normalizeSearch(value);
   const found = employeeStatuses.find(

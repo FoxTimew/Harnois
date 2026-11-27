@@ -92,7 +92,12 @@ describe("PostgreSQL integration", () => {
       });
       const category = await tx.category.create({ data: { name: id } });
       const equipment = await tx.equipment.create({
-        data: { name: id, assetTag: id, categoryId: category.id },
+        data: {
+          name: id,
+          assetTag: id,
+          searchText: id,
+          categoryId: category.id,
+        },
       });
       const data = { equipmentId: equipment.id, employeeId: employee.id };
       await tx.equipmentAssignment.create({

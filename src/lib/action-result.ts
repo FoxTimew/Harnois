@@ -15,6 +15,9 @@ export function actionError(error: unknown): ActionResult {
 export function actionMessage(code: string, details?: Record<string, number>) {
   if (code === "REFERENCE_IN_USE" || code === "DEPARTMENT_HAS_EMPLOYEES") {
     const labels: Record<string, string> = {
+      children: "sous-catégorie(s)",
+      software: "logiciel(s)",
+      invoices: "facture(s)",
       departments: "pôle(s)",
       employees: "employé(s)",
       subscriptions: "abonnement(s)",
@@ -30,13 +33,40 @@ export function actionMessage(code: string, details?: Record<string, number>) {
     );
   }
   const messages: Record<string, string> = {
+    NOTES_TOO_LONG:
+      "Les notes et le motif dépassent 2 000 caractères. Raccourcissez le texte avant de valider.",
+    CATEGORY_CYCLE: "Ce parent formerait une boucle de catégories.",
+    DUPLICATE_SPEC_KEY:
+      "Cette clé de caractéristique existe déjà dans la catégorie ou un parent.",
+    IMMUTABLE_SPEC_TYPE:
+      "Le type d’une caractéristique ne peut pas être modifié.",
+    SPEC_IN_USE:
+      "Cette caractéristique est utilisée. Conservez-la ou désactivez-la.",
+    INVALID_SPECS:
+      "Vérifiez les caractéristiques et leurs types pour cette catégorie.",
+    DUPLICATE_EQUIPMENT: "Ce numéro d’inventaire ou de série est déjà utilisé.",
+    EQUIPMENT_ASSIGNED: "Cet équipement a déjà une assignation active.",
+    ASSIGNMENT_REQUIRED:
+      "Attribuez cet équipement depuis sa fiche pour créer l’assignation.",
+    ASSIGNMENT_CLOSED:
+      "Cette assignation est déjà close ou ne correspond pas à un prêt.",
+    RETURN_REQUIRED: "Effectuez d’abord le retour du matériel.",
+    RETURN_CONDITION_REQUIRED: "Renseignez l’état du matériel au retour.",
+    REASON_REQUIRED: "Une note explicative est obligatoire.",
+    DAMAGED_EQUIPMENT: "Un équipement endommagé doit passer en réparation.",
+    EMPLOYEE_UNAVAILABLE:
+      "Cet employé n’existe pas ou a quitté l’organisation.",
+    LOAN_DATE_REQUIRED: "Le prêt exige une date de retour prévue non passée.",
+    ORGANIZATION_REQUIRED:
+      "Rattachez l’employé à une organisation avant de générer l’attestation.",
+    ONE_EMPLOYEE_REQUIRED: "Sélectionnez les mouvements d’un seul employé.",
+    INVALID_CATEGORY_PATH: "Vérifiez le chemin de catégorie : Parent > Enfant.",
     STALE_RECORD: "Cette fiche a changé. Rechargez-la avant de réessayer.",
     DUPLICATE_REFERENCE: "Un élément de ce nom existe déjà dans ce périmètre.",
     DUPLICATE_EMPLOYEE_EMAIL:
       "Cette adresse email appartient déjà à un employé.",
     ORGANIZATION_MISMATCH: "L’organisation doit correspondre à celle du pôle.",
-    REFERENCE_NOT_FOUND:
-      "Une organisation, un pôle ou un site sélectionné n’existe plus.",
+    REFERENCE_NOT_FOUND: "Un référentiel sélectionné n’existe plus.",
     HIERARCHY_CYCLE: "Ce manager formerait une boucle dans la hiérarchie.",
     MANAGER_NOT_FOUND: "Le manager sélectionné n’existe plus.",
     MANAGER_LEFT: "Un employé parti ne peut pas être choisi comme manager.",
@@ -58,7 +88,7 @@ export function actionMessage(code: string, details?: Record<string, number>) {
     IMPORT_HAS_ERRORS:
       "Corrigez toutes les erreurs avant de confirmer l’import.",
     REFERENCES_NOT_APPROVED:
-      "Confirmez explicitement la création des organisations et pôles proposés.",
+      "Confirmez explicitement la création de tous les référentiels proposés.",
     IMPORT_TOO_LARGE:
       "Limite dépassée : 2 Mio par fichier, 1 000 lignes de données.",
     INVALID_CSV:

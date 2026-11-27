@@ -35,6 +35,12 @@ export function visibleNavigation(user: PermissionUser) {
       ...(user.employeeId
         ? [
             {
+              id: "my-equipment",
+              label: "Mon matériel",
+              href: "/my-equipment",
+              icon: "computer",
+            },
+            {
               id: "my-employee",
               label: "Ma fiche",
               href: "/employees/" + user.employeeId,

@@ -188,6 +188,18 @@ export function authFixture(
       await original.invitation.deleteMany({
         where: { id: { in: ids("Invitation") } },
       });
+      await original.equipmentAssignment.deleteMany({
+        where: { id: { in: ids("EquipmentAssignment") } },
+      });
+      await original.equipment.deleteMany({
+        where: { id: { in: ids("Equipment") } },
+      });
+      await original.category.deleteMany({
+        where: { id: { in: ids("Category") } },
+      });
+      await original.supplier.deleteMany({
+        where: { id: { in: ids("Supplier") } },
+      });
       await original.user.deleteMany({ where: { id: { in: ids("User") } } });
       await original.employee.deleteMany({
         where: { id: { in: ids("Employee") } },

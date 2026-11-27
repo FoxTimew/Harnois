@@ -56,6 +56,16 @@ enum EquipmentCondition {
   DAMAGED
 }
 
+enum EquipmentAssignmentKind {
+  PERMANENT
+  LOAN
+}
+
+enum EquipmentAssignmentClosureReason {
+  RETURNED
+  LOST
+}
+
 enum BillingCycle {
   MONTHLY
   YEARLY
@@ -419,14 +429,18 @@ model Employee {
 
 // Catégories hiérarchiques : "Informatique" > "PC portable", "Mobilier" > "Bureau"
 model Category {
-  id       String     @id @default(cuid())
-  name     String     @unique
-  icon     String?
-  parentId String?
-  parent   Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: SetNull)
-  children Category[] @relation("Subcategories")
+  id              String     @id @default(cuid())
+  name            String     @unique
+  icon            String?
+  parentId        String?
+  parent          Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: SetNull)
+  children        Category[] @relation("Subcategories")
+  specDefinitions Json       @default("[]")
+  updatedAt       DateTime   @default(now()) @updatedAt
 
   equipments Equipment[]
+
+  @@index([parentId])
 }
 
 model Supplier {
@@ -447,7 +461,9 @@ model Supplier {
 
 model Equipment {
   id                 String             @id @default(cuid())
-  assetTag           String             @unique // n° d'inventaire interne, encodé dans le QR code
+  assetTag           String             @unique // n° lisible ; le QR utilise l'identifiant immuable
+  inventoryNumber    Int                @unique @default(autoincrement())
+  searchText         String
   name               String
   brand              String?
   model              String?
@@ -479,27 +495,35 @@ model Equipment {
   @@index([categoryId])
   @@index([status])
   @@index([warrantyEndDate])
+  @@index([supplierId])
+  @@index([locationId])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 // Historique d'assignation : remplace le simple employeeId sur Equipment.
 // Assignation active = returnedAt IS NULL (unicité garantie par un index partiel SQL).
 model EquipmentAssignment {
-  id           String              @id @default(cuid())
-  equipmentId  String
-  equipment    Equipment           @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
-  employeeId   String
-  employee     Employee            @relation(fields: [employeeId], references: [id], onDelete: Restrict)
-  assignedAt   DateTime            @default(now())
-  returnedAt   DateTime?
-  conditionOut EquipmentCondition? // état à la remise
-  conditionIn  EquipmentCondition? // état au retour
-  notes        String?
-  assignedById String?
-  assignedBy   User?               @relation(fields: [assignedById], references: [id], onDelete: SetNull)
+  id                 String                            @id @default(cuid())
+  equipmentId        String
+  equipment          Equipment                         @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  employeeId         String
+  employee           Employee                          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  assignedAt         DateTime                          @default(now())
+  kind               EquipmentAssignmentKind           @default(PERMANENT)
+  expectedReturnDate DateTime?                         @db.Date
+  closureReason      EquipmentAssignmentClosureReason?
+  returnNotes        String?
+  returnedAt         DateTime?
+  conditionOut       EquipmentCondition? // état à la remise
+  conditionIn        EquipmentCondition? // état au retour
+  notes              String?
+  assignedById       String?
+  assignedBy         User?                             @relation(fields: [assignedById], references: [id], onDelete: SetNull)
 
   @@unique([equipmentId], where: { returnedAt: null }, map: "EquipmentAssignment_active_equipment_key")
   @@index([equipmentId, returnedAt])
   @@index([employeeId, returnedAt])
+  @@index([returnedAt, expectedReturnDate])
 }
 
 // ---------------------------------------------------------------------

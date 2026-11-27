@@ -31,7 +31,7 @@ export const navigation: NavigationItem[] = [
     label: "Équipements",
     href: "/equipment",
     icon: "computer",
-    enabled: false,
+    enabled: true,
     permission: { action: "read", resource: "equipment" },
   },
   {

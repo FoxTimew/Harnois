@@ -22,12 +22,16 @@ const expected = {
     "RCUA",
     "RCUA",
     "RCUA",
+    "RCUA",
+    "RCUA",
     "R",
     "RUA",
     "RCA",
     "R",
   ],
   IT_MANAGER: [
+    "RCUA",
+    "RCUA",
     "RCUA",
     "RCUA",
     "RCUA",
@@ -47,6 +51,8 @@ const expected = {
   TECHNICIAN: [
     "R",
     "R",
+    "R",
+    "R",
     "RCUA",
     "RCUA",
     "R",
@@ -62,6 +68,8 @@ const expected = {
     "",
   ],
   EMPLOYEE: [
+    "",
+    "",
     "",
     "R",
     "R",
@@ -85,6 +93,27 @@ const user = (role: PermissionUser["role"]): PermissionUser => ({
   isActive: true,
   role,
 });
+it.each(
+  roles.flatMap((role) =>
+    [
+      "equipment:import",
+      "equipment:export",
+      "equipment:documents",
+      "equipment:labels",
+      "equipment:scan",
+    ].map((action) => [role, action] as const),
+  ),
+)("%s capability %s", (role, action) => {
+  const expected =
+    action === "equipment:import" || action === "equipment:export"
+      ? role === "ADMIN" || role === "IT_MANAGER"
+      : role !== "EMPLOYEE";
+  expect(can(user(role), action, "equipment")).toBe(expected);
+  expect(can(user(role), action, "employees")).toBe(false);
+  expect(can({ ...user(role), isActive: false }, action, "equipment")).toBe(
+    false,
+  );
+});
 const cases = roles.flatMap((role) =>
   resources.flatMap((type, index) =>
     actions.map((action, ai) => ({
@@ -95,7 +124,7 @@ const cases = roles.flatMap((role) =>
     })),
   ),
 );
-describe("permission acceptance matrix (240 combinations)", () => {
+describe("permission acceptance matrix (272 combinations)", () => {
   it.each(cases)(
     "$role $type $action = $allowed",
     ({ role, type, action, allowed }) => {
@@ -250,7 +279,7 @@ it.each(roles)(
   (role) => {
     const nav = visibleNavigation(user(role));
     expect(nav.main.map((item) => item.id)).toEqual(
-      role === "EMPLOYEE" ? [] : ["employees", "references"],
+      role === "EMPLOYEE" ? [] : ["employees", "equipment", "references"],
     );
     expect(nav.adminLabel).toBe(
       role === "ADMIN" ? "Administration" : "Gestion",
