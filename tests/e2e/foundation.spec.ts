@@ -144,8 +144,10 @@ for (const role of ["ADMIN", "IT_MANAGER", "TECHNICIAN", "EMPLOYEE"] as const) {
       await expect(
         nav.getByRole("link", { name: "Administration" }),
       ).toHaveCount(0);
+    await expect(
+      nav.getByRole("link", { name: "Équipements", exact: true }),
+    ).toHaveCount(role === "EMPLOYEE" ? 0 : 1);
     for (const name of [
-      "Équipements",
       "Logiciels",
       "Comptes",
       "Factures",

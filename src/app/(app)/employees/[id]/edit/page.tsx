@@ -1,3 +1,5 @@
+import { employeeEquipment } from "@/server/services/equipment";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePageUser } from "@/server/auth/require-page-user";
 import { getDb } from "@/server/db";
@@ -28,6 +30,9 @@ export default async function EditEmployeePage({
     employeeOptions(getDb(), actor),
     new MfaService().status(actor),
   ]);
+  const material = (await employeeEquipment(getDb(), actor, id)).filter(
+    (r) => !r.returnedAt,
+  );
   return (
     <section className="max-w-4xl">
       <PageHeading
@@ -35,6 +40,28 @@ export default async function EditEmployeePage({
         title={row.firstName + " " + row.lastName}
         description="Mettre à jour les informations et le parcours de l’employé."
       />
+      {material.length > 0 && (
+        <aside className="mb-6 rounded-xl border border-warning/40 bg-warning/10 p-5">
+          <h2 className="font-semibold">
+            Matériel à récupérer en cas de départ ({material.length})
+          </h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {material.map((r) => (
+              <li key={r.id}>
+                <Link
+                  className="hover:underline"
+                  href={"/equipment/" + r.equipment.id}
+                >
+                  {r.equipment.assetTag} · {r.equipment.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Ces assignations restent actives et ne bloquent pas le départ.
+          </p>
+        </aside>
+      )}
       <EmployeeEditor
         key={row.updatedAt}
         id={id}

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { employeeEquipment } from "@/server/services/equipment";
+import { EmployeeEquipment } from "@/components/equipment/equipment-history";
 import { notFound } from "next/navigation";
 import { requirePageUser } from "@/server/auth/require-page-user";
 import { getDb } from "@/server/db";
@@ -66,6 +68,8 @@ export default async function EmployeePage({
           pageSize: 50,
         })
       : null;
+  const material =
+    tab === "equipment" ? await employeeEquipment(getDb(), actor, id) : null;
   const entries = [
     ["Email professionnel", row.email],
     ["Poste", row.jobTitle ?? "—"],
@@ -181,6 +185,11 @@ export default async function EmployeePage({
             )}
           </aside>
         </div>
+      ) : tab === "equipment" ? (
+        <EmployeeEquipment
+          rows={material ?? []}
+          personal={user.role === "EMPLOYEE"}
+        />
       ) : tab === "history" ? (
         <section className="rounded-2xl border bg-card p-6">
           <h2 className="mb-5 text-lg font-semibold">Historique de la fiche</h2>
